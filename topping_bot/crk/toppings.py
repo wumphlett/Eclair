@@ -11,6 +11,8 @@ class Resonance(Enum):
     DRACONIC = "Draconic"
     TROPICAL_ROCK = "Tropical Rock"
     SEA_SALT = "Sea Salt"
+    RADIANT_CHEESE = "Radiant Cheese"
+    FROSTED_CRYSTAL = "Frosted Crystal"
 
 
 class Type(Enum):

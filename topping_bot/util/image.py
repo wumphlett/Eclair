@@ -63,6 +63,20 @@ TOPPINGS = {
         Type.CD: Image.open(TOPPING_PATH / "sea" / f"{INFO[Type.CD]['filename']}.png").resize((101, 148)),
         Type.ATKSPD: Image.open(TOPPING_PATH / "sea" / f"{INFO[Type.ATKSPD]['filename']}.png").resize((101, 148)),
         Type.CRIT: Image.open(TOPPING_PATH / "sea" / f"{INFO[Type.CRIT]['filename']}.png").resize((101, 148)),
+    },
+    Resonance.RADIANT_CHEESE: {
+        Type.DMGRES: Image.open(TOPPING_PATH / "cheese" / f"{INFO[Type.DMGRES]['filename']}.png").resize((101, 148)),
+        Type.ATK: Image.open(TOPPING_PATH / "cheese" / f"{INFO[Type.ATK]['filename']}.png").resize((101, 148)),
+        Type.CD: Image.open(TOPPING_PATH / "cheese" / f"{INFO[Type.CD]['filename']}.png").resize((101, 148)),
+        Type.ATKSPD: Image.open(TOPPING_PATH / "cheese" / f"{INFO[Type.ATKSPD]['filename']}.png").resize((101, 148)),
+        Type.CRIT: Image.open(TOPPING_PATH / "cheese" / f"{INFO[Type.CRIT]['filename']}.png").resize((101, 148)),
+    },
+    Resonance.FROSTED_CRYSTAL: {
+        Type.DMGRES: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.DMGRES]['filename']}.png").resize((101, 148)),
+        Type.ATK: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.ATK]['filename']}.png").resize((101, 148)),
+        Type.CD: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.CD]['filename']}.png").resize((101, 148)),
+        Type.ATKSPD: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.ATKSPD]['filename']}.png").resize((101, 148)),
+        Type.CRIT: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.CRIT]['filename']}.png").resize((101, 148)),
     }
 }
 STATIC = {

@@ -214,11 +214,11 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
             top_left = np.min(active_pixels, axis=1).astype(np.int32)
 
             # to capture new resonance template
-            # cv2.imwrite(str(READER_PATH / "resonant" / "tropical.jpg"), title)
+            # cv2.imwrite(str(READER_PATH / "resonant" / "frosted_crystal.jpg"), title)
 
             metatype = Resonance.NORMAL
             # print("RESONANCE CHECK")
-            for resonance in (Resonance.MOONKISSED, Resonance.TRIO, Resonance.DRACONIC, Resonance.TROPICAL_ROCK, Resonance.SEA_SALT):
+            for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
                 template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
                 h, w = template.shape
 
@@ -226,7 +226,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 x, y = min_loc
-                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.55)
+                print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.55)
                 if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15:
                     continue
 
@@ -236,6 +236,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
             topping = Topping(substats, resonance=metatype)
             if not topping.validate():
+                print("PANIC")
                 if state == STATE.STARTED:
                     if verbose:
                         cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
