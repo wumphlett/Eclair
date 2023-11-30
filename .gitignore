@@ -5,6 +5,7 @@ tmp/
 
 # reqs
 reqs/*
+!reqs/example.yaml
 
 # config
 .env

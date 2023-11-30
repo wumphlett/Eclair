@@ -1,0 +1,44 @@
+cookies:
+- name: Werewolf
+  requirements:
+  - Cooldown >= 9
+  - DMG Resist >= 10
+  - ATK SPD >= 7.5
+  - max: CRIT%
+- name: Rye
+  requirements:
+  - max: E[DMG]
+    ATK: 33.72
+- name: Squid
+  requirements:
+  - ATK SPD below Werewolf
+  - Cooldown >= 9
+  - Cooldown <= 12
+  - max: E[DMG]
+    ATK: 29.52
+- name: Cream Puff
+  requirements:
+  - Cooldown >= 7.5
+  - CRIT% >= 55.7
+  - max: E[DMG]
+    CRIT%: 14.7
+    ATK: 34.77
+- name: Macaron
+  requirements:
+  - Cooldown >= 25
+  - max: Combo
+    substats:
+    - Cooldown
+    - DMG Resist
+modifiers:
+  CRIT%:
+  - source: Double Macaron Buff
+    value: 23
+  CRIT DMG:
+  - source: Moonstone Relic
+    value: 18.2
+  - source: Cream Puff MC
+    value: 25
+  ATK MULT:
+  - source: The Order's Sacred Fork Treasure
+    value: 0.3
