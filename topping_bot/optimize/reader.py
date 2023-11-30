@@ -214,7 +214,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
             top_left = np.min(active_pixels, axis=1).astype(np.int32)
 
             # to capture new resonance template
-            # cv2.imwrite(str(READER_PATH / "resonant" / "frosted_crystal.jpg"), title)
+            # cv2.imwrite(str(READER_PATH / "resonant" / "new.jpg"), title)
 
             metatype = Resonance.NORMAL
             # print("RESONANCE CHECK")
@@ -227,8 +227,13 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
                 x, y = min_loc
                 # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.55)
-                if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15:
+                if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
                     continue
+
+                # tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
+                # tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                # cv2.imshow("Dev", tmp)
+                # cv2.waitKey(0)
 
                 if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.55:
                     metatype = resonance
