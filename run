@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+nohup poetry run python topping_bot/bot.py >> log.txt 2> /dev/null &

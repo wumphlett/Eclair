@@ -1,0 +1,204 @@
+# Re-order based on rank on startup and every 24
+# Create and store channel if one is not available
+# Default optimizer "guild"
+pure-vanilla:
+  - name: LoserSquad
+    server: 814318082373451777
+    role: 817749138489081857
+    channels:
+      - 1102164831001395261
+    emoji: 🥉
+    icon: null
+    rank: null
+    optimizer: False
+hollyberry:
+  - name: Creamery
+    server: 1093123534483640433
+    role: 1093134793417429094
+    channels:
+      - 1093146572017115186
+      - 1095995346208948305
+      - 1093426898924748800
+    mod: 1093148873268150273
+    emoji: 🍨
+    icon: 18
+    rank: 3
+    optimizer: True
+  - name: Aeternus
+    server: 917936725693698088
+    role: 917941400912429076
+    channels:
+      - 1096632025286447134
+    emoji: 💮
+    icon: 2
+    rank: 6
+    optimizer: False
+  - name: Gnomads
+    server: 1092219200585596928
+    role: 1093316803339501598
+    channels:
+      - 1095995458599530606
+    emoji: 💪
+    icon: 19
+    rank: 7
+    optimizer: True
+  - name: GachaTorture
+    server: 891943428424888391
+    role: 892660414129795123
+    channels:
+      - 1096008568769105981
+    emoji: ☕
+    icon: 10
+    rank: 10
+    optimizer: True
+  - name: AquaAffinity
+    server: 1106150108015366205
+    role: 1125534522537169037
+    channels:
+      - 1096043981017714738
+    emoji: 🌊
+    icon: 11
+    rank: 15
+    optimizer: False
+  - name: SylvanaKookies
+    server: 907234530467934208
+    role: 1010098273803046913
+    channels:
+      - 1103938330678263868
+    emoji: 💗
+    icon: 10
+    rank: 16
+    optimizer: False
+  - name: Overdoughs
+    server: 891943428424888391
+    role: 892702781373317160
+    channels:
+      - 1096048170057879562
+    emoji: 🍄
+    icon: 13
+    rank: 19
+    optimizer: False
+  - name: BadBatchOCookies
+    server: 910556057305235466
+    role: 974790857930706995
+    channels:
+      - 1097150485041004654
+    emoji: 🍪
+    icon: 13
+    rank: 21
+    optimizer: False
+  - name: FallOnion
+    server: 939237991195488347
+    role: 1034049459186831410
+    channels:
+      - 1111282248726098012
+    emoji: 🧅
+    icon: 2
+    rank: 22
+    optimizer: False
+  - name: Mage
+    server: 1016487455156879430
+    role: 1016496625998385202
+    channels:
+      - 1105608134510252095
+    emoji: 🧙
+    icon: 15
+    rank: 24
+    optimizer: True
+  - name: WISTERIA
+    server: 971445374059425872
+    role: 971447254802116628
+    emoji: 🌼
+    icon: 2
+    rank: 25
+    optimizer: False
+  - name: CrumblingIdiots
+    server: 891943428424888391
+    role: 916568876593086464
+    channels:
+      - 1096047463405715568
+    emoji: 🍪
+    icon: 15
+    rank: 26
+    optimizer: False
+  - name: PeachTea
+    server: 891943428424888391
+    role: 893758065382404136
+    channels:
+      - 1096046274245050480
+    emoji: 🍑
+    icon: 2
+    rank: 27
+    optimizer: False
+  - name: BeelzeJelly
+    server: 899457533926842408
+    role: 899822449976291378
+    emoji: 🥷
+    icon: 8
+    rank: 28
+    optimizer: False
+  - name: SSTsunami
+    server: 1050081324448362569
+    role: 1050085858000244836
+    channels:
+      - 1111282408717828156
+    emoji: 🌊
+    icon: 8
+    rank: 29
+    optimizer: False
+  - name: ChromaticHaze
+    server: 1106150108015366205
+    role: 1106158072658923550
+    channels:
+      - 1118578792135413780
+    emoji: 🌈
+    icon: 20
+    rank: 30
+    optimizer: False
+dark-cacao:
+  - name: Miso
+    server: 891943428424888391
+    role: 1016432441013059635
+    channels:
+      - 1105608134510252095
+    emoji: 🥣
+    icon: null
+    rank: 1
+    optimizer: False
+  - name: Nigiri
+    server: 891943428424888391
+    role: 1052757600288112651
+    channels:
+      - 1105608134510252095
+    emoji: 🍣
+    icon: null
+    rank: 2
+    optimizer: False
+  - name: TimeRift
+    server: 992691459427934260
+    role: 992697536211066970
+    channels:
+      - 1105608134510252095
+    emoji: ⏰
+    icon: null
+    rank: 3
+    optimizer: False
+  - name: Wagyu
+    server: 891943428424888391
+    role: 965724837601497159
+    channels:
+      - 1105608134510252095
+    emoji: 🐮
+    icon: null
+    rank: 4
+    optimizer: False
+arena: []
+special:
+  - name: Optimizers
+    server: 1090949984356159538
+    role: 1091054770615238676
+    mod: 1107519939679633448
+    emoji: 📜
+    icon: null
+    rank: null
+    optimizer: True

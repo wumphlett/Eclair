@@ -1,0 +1,25 @@
+# data
+leaderboard/
+data/*
+tmp/
+
+# reqs
+reqs/*
+
+# config
+.env
+
+# debug
+debug/
+
+# dev
+.idea/
+log.txt
+err.txt
+
+# misc
+**/*.pyc
+**/*.whl
+
+# models
+models/

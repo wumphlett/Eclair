@@ -1,0 +1,874 @@
+meta:
+  - Hollyberry
+  - Space Doughnut
+  - Wildberry
+  - Milky Way
+  - Werewolf
+  - Sherbet
+  - Stardust
+  - Captain Caviar
+  - Moonlight
+  - Squid Ink
+  - Frost Queen
+  - Black Pearl
+  - Pinecone
+  - Pure Vanilla
+  - BTS
+  - Capsaicin
+  - Vampire
+  - Kouign-Amann
+  - Madeleine
+  - Schwarzwälder
+  - Pitaya Dragon
+order:
+  - GingerBrave
+  - Tea Knight
+  - Hollyberry
+  - Space Doughnut
+  - Kouign-Amann
+  - Schwarzwälder
+  - Pinecone
+  - Capsaicin
+  - Mala Sauce
+  - Wildberry
+  - Strawberry
+  - Moon Rabbit
+  - Princess
+  - Cocoa
+  - Dark Choco
+  - Muscle
+  - Crunchy Chip
+  - Pitaya Dragon
+  - Avocado
+  - Milky Way
+  - Strawberry Crepe
+  - Purple Yam
+  - Financier
+  - Kumiho
+  - Milk
+  - Dark Cacao
+  - Madeleine
+  - Knight
+  - Red Velvet
+  - Raspberry
+  - Werewolf
+  - Caramel Arrow
+  - Sonic
+  - Macaron
+  - Tails
+  - Clotted Cream
+  - Royal Margarine
+  - Sherbet
+  - Blueberry Pie
+  - Prune Juice
+  - Stardust
+  - Affogato
+  - Captain Caviar
+  - Pomegranate
+  - Eclair
+  - Moonlight
+  - Sorbet Shark
+  - Mango
+  - Sea Fairy
+  - Fig
+  - Black Raisin
+  - Latte
+  - Espresso
+  - Lilac
+  - Poison Mushroom
+  - Onion
+  - Chili Pepper
+  - Carrot
+  - Snow Sugar
+  - Devil
+  - Squid Ink
+  - Wizard
+  - Licorice
+  - Adventurer
+  - Alchemist
+  - Frost Queen
+  - Black Pearl
+  - Pumpkin Pie
+  - Ninja
+  - Blackberry
+  - Prophet
+  - Oyster
+  - Twizzly Gummy
+  - Mint Choco
+  - Cotton
+  - Angel
+  - Herb
+  - Sparkling
+  - Pure Vanilla
+  - Parfait
+  - Cherry Blossom
+  - Rye
+  - Pancake
+  - Gumball
+  - Beet
+  - Clover
+  - Vampire
+  - Cream Puff
+  - Custard
+  - Cherry
+  - Cream Unicorn
+  - Carol
+  - Pastry
+  - Tiger Lily
+  - Almond
+  - Candy Diver
+  - BTS
+featured:
+  - Royal Margarine
+legendary: Pitaya Dragon
+cookies:
+  Dark Cacao:
+    id: 508
+    rarity: Ancient
+    type: Charge
+    position: Front
+    cd: 16
+    aliases:
+      - DC
+  Hollyberry:
+    id: 510
+    rarity: Ancient
+    type: Defense
+    position: Front
+    cd: 17
+    special_start: 1
+    aliases:
+      - HB
+  Pure Vanilla:
+    id: 506
+    rarity: Ancient
+    type: Healing
+    position: Rear
+    cd: 15
+    aliases:
+      - PV
+  Pitaya Dragon:
+    id: 138
+    rarity: Dragon
+    type: Charge
+    position: Front
+    cd: 13
+    aliases:
+      - Pit
+      - PD
+  Moonlight:
+    id: 49
+    rarity: Legendary
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases:
+      - ML
+  Black Pearl:
+    id: 568
+    rarity: Legendary
+    type: Ambush
+    position: Middle
+    cd: 15
+    aliases:
+      - BP
+  Frost Queen:
+    id: 530
+    rarity: Legendary
+    type: Magic
+    position: Middle
+    cd: 18
+    aliases:
+      - FQ
+  Sea Fairy:
+    id: 65
+    rarity: Legendary
+    type: Bomber
+    position: Middle
+    cd: 17
+    aliases:
+      - SF
+  Capsaicin:
+    id: 575
+    rarity: Super Epic
+    type: Charge
+    position: Front
+    cd: 15
+    aliases:
+      - Cap
+  Stardust:
+    id: 574
+    rarity: Super Epic
+    type: Ambush
+    position: Middle
+    cd: 13
+    aliases:
+      - SD
+  Sherbet:
+    id: 571
+    rarity: Super Epic
+    type: Ranged
+    position: Middle
+    cd: 13
+    aliases:
+      - Sh
+      - Sherb
+  Oyster:
+    id: 539
+    rarity: Super Epic
+    type: Support
+    position: Rear
+    cd: 17
+    special_start: 2
+    aliases:
+      - Oy
+  Clotted Cream:
+    id: 536
+    rarity: Super Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases:
+      - CC
+  Royal Margarine:
+    id: 578
+    rarity: Epic
+    type: Ambush
+    position: Middle
+    cd: 12
+    aliases:
+      - Marg
+  Kouign-Amann:
+    id: 577
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 12
+    duration_skill: True
+    aliases:
+      - KA
+  Prune Juice:
+    id: 576
+    rarity: Epic
+    type: Bomber
+    position: Middle
+    cd: 15
+    aliases:
+      - PJ
+  Space Doughnut:
+    id: 106
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 12
+    aliases:
+      - Donut
+  Blueberry Pie:
+    id: 148
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases:
+      - BBP
+  Milky Way:
+    id: 573
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 15
+    aliases:
+      - MW
+      - Milky
+      - Truck Chan
+  Prophet:
+    id: 32
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 19
+    aliases: []
+  Pinecone:
+    id: 572
+    rarity: Epic
+    type: Bomber
+    position: Front
+    cd: 12
+    duration_skill: True
+    aliases: []
+  Carol:
+    id: 29
+    rarity: Epic
+    type: Healing
+    position: Rear
+    cd: 16
+    aliases: []
+  Macaron:
+    id: 59
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases:
+      - Maca
+      - Mac
+  Schwarzwälder:
+    id: 570
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 12
+    special_start: 1.8
+    aliases:
+      - Brute
+  Candy Diver:
+    id: 569
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 15
+    aliases: []
+  Captain Caviar:
+    id: 567
+    rarity: Epic
+    type: Bomber
+    position: Middle
+    cd: 15
+    aliases:
+      - Cav
+  Cream Unicorn:
+    id: 157
+    rarity: Epic
+    type: Healing
+    position: Rear
+    cd: 17
+    aliases: []
+  Financier:
+    id: 538
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 15
+    aliases:
+      - Fin
+  Crunchy Chip:
+    id: 537
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 15
+    aliases:
+      - Chip
+  Wildberry:
+    id: 535
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 10
+    duration_skill: True
+    aliases:
+      - WB
+  Cherry Blossom:
+    id: 51
+    rarity: Epic
+    type: Ambush
+    position: Rear
+    cd: 17
+    aliases:
+      - CB
+  Caramel Arrow:
+    id: 534
+    rarity: Epic
+    type: Ranged
+    position: Front
+    cd: 10
+    duration_skill: True
+    aliases:
+      - Carrow
+      - CA
+  Affogato:
+    id: 533
+    rarity: Epic
+    type: Bomber
+    position: Middle
+    cd: 15
+    aliases:
+      - Affo
+  Eclair:
+    id: 531
+    rarity: Epic
+    type: Support
+    position: Middle
+    cd: 16
+    aliases: []
+  Tea Knight:
+    id: 532
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 18
+    aliases:
+      - TK
+  Cocoa:
+    id: 45
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 15
+    aliases: []
+  Cotton:
+    id: 529
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 17
+    aliases: []
+  Pumpkin Pie:
+    id: 528
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 18
+    special_start: 1
+    aliases:
+      - PP
+  Mala Sauce:
+    id: 143
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 15
+    aliases: []
+  Twizzly Gummy:
+    id: 527
+    rarity: Epic
+    type: Ranged
+    position: Rear
+    cd: 16
+    aliases: []
+  Moon Rabbit:
+    id: 71
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 14
+    aliases: []
+  Raspberry:
+    id: 524
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 14
+    aliases: []
+  Parfait:
+    id: 523
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 17
+    aliases: []
+  Squid Ink:
+    id: 124
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 16
+    aliases:
+      - Squid
+      - Squink
+  Sorbet Shark:
+    id: 160
+    rarity: Epic
+    type: Ambush
+    position: Middle
+    cd: 17
+    aliases: []
+  Lilac:
+    id: 522
+    rarity: Epic
+    type: Support
+    position: Middle
+    cd: 13
+    aliases: []
+  Mango:
+    id: 154
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases: []
+  Red Velvet:
+    id: 521
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 15
+    aliases:
+      - RV
+  Fig:
+    id: 131
+    rarity: Epic
+    type: Support
+    position: Middle
+    cd: 15
+    aliases: []
+  Pastry:
+    id: 520
+    rarity: Epic
+    type: Ranged
+    position: Rear
+    cd: 13
+    aliases: []
+  Strawberry Crepe:
+    id: 518
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 15
+    aliases:
+      - SC
+  Black Raisin:
+    id: 519
+    rarity: Epic
+    type: Ambush
+    position: Middle
+    cd: 14
+    aliases:
+      - BR
+  Almond:
+    id: 517
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 15
+    aliases: []
+  Cream Puff:
+    id: 48
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 16
+    aliases:
+      - CP
+      - CPuff
+  Latte:
+    id: 516
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases: []
+  Kumiho:
+    id: 24
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 14
+    duration_skill: True
+    aliases: []
+  Rye:
+    id: 515
+    rarity: Epic
+    type: Ranged
+    position: Rear
+    cd: 15
+    aliases: []
+  Vampire:
+    id: 35
+    rarity: Epic
+    type: Ambush
+    position: Rear
+    cd: 13
+    aliases:
+      - Vamp
+  Werewolf:
+    id: 44
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 11
+    duration_skill: True
+    aliases:
+      - WW
+  Espresso:
+    id: 513
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 15
+    aliases: []
+  Purple Yam:
+    id: 134
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 12
+    aliases:
+      - Yam
+  Madeleine:
+    id: 511
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 13
+    duration_skill: True
+    aliases: []
+  Milk:
+    id: 135
+    rarity: Epic
+    type: Defense
+    position: Front
+    cd: 12
+    aliases: []
+  Licorice:
+    id: 503
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 14
+    aliases:
+      - Lico
+  Tiger Lily:
+    id: 40
+    rarity: Epic
+    type: Ranged
+    position: Rear
+    cd: 13
+    duration_skill: True
+    aliases:
+      - TL
+  Poison Mushroom:
+    id: 502
+    rarity: Epic
+    type: Bomber
+    position: Middle
+    cd: 15
+    aliases:
+      - Mush
+  Herb:
+    id: 63
+    rarity: Epic
+    type: Healing
+    position: Rear
+    cd: 17
+    aliases: []
+  Pomegranate:
+    id: 126
+    rarity: Epic
+    type: Support
+    position: Middle
+    cd: 15
+    aliases:
+      - Pom
+  Sparkling:
+    id: 111
+    rarity: Epic
+    type: Healing
+    position: Rear
+    cd: 13
+    aliases: []
+  Snow Sugar:
+    id: 30
+    rarity: Epic
+    type: Magic
+    position: Middle
+    cd: 20
+    aliases: []
+  Dark Choco:
+    id: 103
+    rarity: Epic
+    type: Charge
+    position: Front
+    cd: 13
+    aliases: []
+  Chili Pepper:
+    id: 121
+    rarity: Epic
+    type: Ambush
+    position: Middle
+    cd: 12
+    aliases: []
+  Mint Choco:
+    id: 46
+    rarity: Epic
+    type: Support
+    position: Rear
+    cd: 16
+    aliases: []
+  BTS:
+    id: 564
+    rarity: Special
+    type: BTS
+    position: Rear
+    cd: 19
+    aliases:
+      - Suga
+      - Jimin
+      - Jung Kook
+      - j-hope
+      - V
+      - RM
+      - Jin
+  Sonic:
+    id: 525
+    rarity: Special
+    type: Ambush
+    position: Middle
+    cd: 16
+    aliases: []
+  Tails:
+    id: 526
+    rarity: Special
+    type: Ambush
+    position: Middle
+    cd: 16
+    aliases: [ ]
+  Devil:
+    id: 23
+    rarity: Rare
+    type: Magic
+    position: Middle
+    cd: 18
+    aliases: []
+  Princess:
+    id: 8
+    rarity: Rare
+    type: Charge
+    position: Front
+    cd: 13
+    aliases: []
+  Clover:
+    id: 512
+    rarity: Rare
+    type: Support
+    position: Rear
+    cd: 17
+    aliases: []
+  Pancake:
+    id: 69
+    rarity: Rare
+    type: Ambush
+    position: Rear
+    cd: 15
+    aliases: []
+  Alchemist:
+    id: 34
+    rarity: Rare
+    type: Bomber
+    position: Middle
+    cd: 16
+    aliases: []
+  Adventurer:
+    id: 38
+    rarity: Rare
+    type: Ambush
+    position: Middle
+    cd: 12
+    aliases: []
+  Gumball:
+    id: 50
+    rarity: Rare
+    type: Bomber
+    position: Rear
+    cd: 13
+    aliases: []
+  Knight:
+    id: 9
+    rarity: Rare
+    type: Defense
+    position: Front
+    cd: 13
+    aliases: []
+  Onion:
+    id: 58
+    rarity: Rare
+    type: Support
+    position: Middle
+    cd: 19
+    aliases: []
+  Cherry:
+    id: 28
+    rarity: Rare
+    type: Bomber
+    position: Rear
+    cd: 16
+    aliases: []
+  Carrot:
+    id: 132
+    rarity: Rare
+    type: Support
+    position: Middle
+    cd: 19
+    aliases: []
+  Avocado:
+    id: 113
+    rarity: Rare
+    type: Defense
+    position: Front
+    cd: 13
+    aliases: []
+  Blackberry:
+    id: 42
+    rarity: Rare
+    type: Magic
+    position: Rear
+    cd: 15
+    aliases:
+      - BB
+  Custard:
+    id: 514
+    rarity: Rare
+    type: Healing
+    position: Rear
+    cd: 16
+    aliases: []
+  GingerBrave:
+    id: 1
+    rarity: Common
+    type: Charge
+    position: Front
+    cd: 8
+    aliases:
+      - GB
+  Strawberry:
+    id: 2
+    rarity: Common
+    type: Defense
+    position: Front
+    cd: 10
+    aliases: []
+  Wizard:
+    id: 25
+    rarity: Common
+    type: Magic
+    position: Middle
+    cd: 13
+    aliases: []
+  Ninja:
+    id: 7
+    rarity: Common
+    type: Ambush
+    position: Middle
+    cd: 11
+    aliases: []
+  Angel:
+    id: 12
+    rarity: Common
+    type: Healing
+    position: Rear
+    cd: 15
+    aliases: []
+  Muscle:
+    id: 15
+    rarity: Common
+    type: Charge
+    position: Front
+    cd: 10
+    aliases: []
+  Beet:
+    id: 133
+    rarity: Common
+    type: Ranged
+    position: Rear
+    cd: 12
+    aliases: []

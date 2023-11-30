@@ -1,0 +1,20 @@
+static:
+  thumbnail: https://cdn.discordapp.com/attachments/1071335734532898967/1072029441712214016/eclair.png
+  tutorial: https://cdn.discordapp.com/attachments/1071335734532898967/1072029476545908778/tutorial.gif
+  kill: https://cdn.discordapp.com/attachments/1071335734532898967/1078532353984561244/eclair_gun.png
+  revive: https://cdn.discordapp.com/attachments/1071335734532898967/1078536583784976384/eclair_revive.png
+  icon: https://cdn.discordapp.com/attachments/1071335734532898967/1078543584485191720/eclair_head.png
+community:
+  dev-server: 1090949984356159538
+  updates: 1090958096878288926
+  secrets: 1090958218370482248
+  guild-group: 1095994922827522149
+  meta-vote: 1090956083599781898
+  img-dump: 1090960353359314975 # prod: 1090960353359314975 | dev: 1106065953101447210
+optimizer:
+  default-mod: 1091054683189162096
+stats:
+  join: 1110469557862268949
+  server: 1110469159076249600
+  user: 1110469368346857472
+debug: Creamery  # Creamery used when debugging

@@ -1,0 +1,40 @@
+[ ] Top 30 Community stuff, updates at end of week
+    [ ] Display top 30 in guild hall?
+[ ] Estimated lvls killed per boss
+[ ] optimal hits w/ efficiency math
+
+Up Next:
+[ ] !req edit
+[ ] !req rename (wrap into edit?)
+
+[ ] Bolster /cookie in general w/ info
+
+[ ] Eff rewrites of loops. Do it through role.members
+[ ] Restructure guild system
+[ ] Fix !reconfig
+
+[ ] !vote, add if not in, remove if in. Allow some ppl to call for votes
+   [ ] Also take results after a few hours, auto update meta list
+   [ ] Has to be resistant to restarts (persistent ui)
+
+[ ] GM auto verify
+    [ ] Maybe detect GM 1, 2, and 3
+    [ ] Make sure to update meta voter carl perms
+
+[ ] demo command
+[ ] On join, dm server owner linking to bot dev server as well as advertising useful features
+
+[ ] RoLi/Brandon long sherb solves
+[ ] Brandon impossible donut solve
+[ ] RoLi long marg solve
+[ ] Vitality speedup, partial aware for min dmr/hp
+
+[ ] Matcha?
+
+[ ] Update data
+
+IN ORDER:
+[ ] /cookie bolstering
+[ ] /vote
+[ ] guild/perms rework
+[ ] Check PM Pose
