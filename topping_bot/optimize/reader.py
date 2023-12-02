@@ -164,6 +164,8 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
             threshold = cv2.threshold(gray, 215, 255, cv2.THRESH_BINARY)[1]
 
             contours, hierarchies = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                continue
             contour = max(contours, key=lambda x: cv2.contourArea(x))
 
             if cv2.contourArea(contour) <= 10_000:
@@ -241,7 +243,6 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
             topping = Topping(substats, resonance=metatype)
             if not topping.validate():
-                # print("PANIC")
                 if state == STATE.STARTED:
                     if verbose:
                         cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)

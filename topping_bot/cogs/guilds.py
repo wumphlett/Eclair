@@ -121,7 +121,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             except:
                 pass  # TODO tracked roles error messages
 
-        # TODO DOn't auto role in the source server
+        # TODO Don't auto role in the source server
 
         # TODO Error msgs to subscribed servers & tracked roles
         for server in Guild.subscribed_servers:
