@@ -26,7 +26,8 @@ class Bot(BaseBot):
 async def main():
     intents = Intents.all()
     intents.presences = False
-    bot = Bot(command_prefix="!", intents=intents)
+    # chunk_guilds_at_startup=False per https://discordpy.readthedocs.io/en/latest/intents.html#why-does-on-ready-take-so-long-to-fire
+    bot = Bot(command_prefix="!", intents=intents, chunk_guilds_at_startup=False)
     async with bot:
         await bot.add_cog(Inventory(bot))
         await bot.add_cog(Utility(bot))

@@ -97,7 +97,6 @@ ORDERING = {
     ],
     "Guilds": [
         "guilds",
-        "reconfig",
     ],
     "COGS": ["Cookies", "Inventory", "RequirementFiles", "Stats", "Community", "Utility", "Guilds"],
 }

@@ -91,7 +91,7 @@ class Community(Cog, description="Helper commands available to all!"):
                 "This bot is meant to ease many aspects of CRK",
                 f"\nFor issues or enhancements, please contact the admin",
                 "```",
-                "https://discord.gg/eclair-commune",
+                "https://discord.gg/r6ZQFcRUK7",
                 "https://eclair.community/add-bot",
             ],
             wrap=False,
