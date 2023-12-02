@@ -107,7 +107,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                     "",
                     f"├ {exc}",
                     "",
-                    "Please use !requpload <file> once fixed",
+                    "Please use !req upload <file> once fixed",
                 ],
             )
             return
@@ -255,7 +255,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                 title="Err: No Requirement File",
                 description=[
                     "You do not have a requirement file attached",
-                    "Please use !requpload <file> to upload a file",
+                    "Please use !req upload <file> to upload a file",
                 ],
             )
             return
@@ -266,7 +266,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                 title="Err: Too Many Requirement Files",
                 description=[
                     "You have too many requirement files",
-                    "Please use !reqdelete to remove some",
+                    "Please use !req delete to remove some",
                 ],
             )
             return
@@ -279,7 +279,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                 title="Err: Improper Requirement File",
                 description=[
                     "Requirements file must be a yaml file",
-                    "Please use !requpload <file> to upload a file",
+                    "Please use !req upload <file> to upload a file",
                 ],
             )
             return
@@ -290,7 +290,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                 title="Err: Improper Requirement File",
                 description=[
                     "Requirements file must less than 10 KB",
-                    "Please use !requpload <file> to upload a file",
+                    "Please use !req upload <file> to upload a file",
                 ],
             )
             return
@@ -340,7 +340,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                     "",
                     f"├ {exc}",
                     "",
-                    "Please use !requpload <file> once fixed",
+                    "Please use !req upload <file> once fixed",
                 ],
             )
             tmp_fp.unlink(missing_ok=True)
@@ -354,7 +354,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
                 title="Err: Improper Requirement File",
                 description=[
                     "Requirements file cannot have more than 10 cookies",
-                    "Please use !requpload <file> to upload a file",
+                    "Please use !req upload <file> to upload a file",
                 ],
             )
             fp.unlink(missing_ok=True)

@@ -14,7 +14,7 @@ pure-vanilla:
 hollyberry:
   - name: Creamery
     server: 1093123534483640433
-    role: 109313479341742909 # 1093134793417429094
+    role: 1093134793417429094
     channels:
       - 1093146572017115186
       - 1095995346208948305
@@ -51,15 +51,6 @@ hollyberry:
     icon: 10
     rank: 10
     optimizer: True
-  - name: AquaAffinity
-    server: 1106150108015366205
-    role: 1125534522537169037
-    channels:
-      - 1096043981017714738
-    emoji: 🌊
-    icon: 11
-    rank: 15
-    optimizer: False
   - name: SylvanaKookies
     server: 907234530467934208
     role: 1010098273803046913

@@ -65,7 +65,7 @@ class Guild:
         new_tracked_servers = defaultdict(set)
         for guild in Guild.supported:
             if not guild.is_special:
-                new_tracked_servers[guild.server].add(guild.role)
+                new_tracked_servers[guild.server].add(guild)
         Guild.tracked_servers = new_tracked_servers
 
     @classmethod
@@ -87,4 +87,10 @@ class Guild:
     @classmethod
     def load_subscribed_servers(cls):
         with open(SUBSCRIBED_SERVERS) as f:
-            return [server.strip() for server in f.readlines() if server.strip()]
+            return [int(server.strip()) for server in f.readlines() if server.strip()]
+
+    @classmethod
+    def load_subscribed_server_info(cls, server: int):
+        server_fp = GUILD_PATH / f"{server}.yaml"
+        with open(server_fp) as f:
+            return yaml.safe_load(f)

@@ -1,5 +1,6 @@
 import traceback
 from collections import defaultdict
+import contextlib
 from datetime import datetime
 import yaml
 
@@ -14,6 +15,11 @@ from topping_bot.util.const import CONFIG, CONFIG_FILE, DEBUG, GUILD_PATH, STATI
 from topping_bot.ui.common import Paginator
 
 
+"""
+TODO Register Subscribed Server
+"""
+
+
 class Guilds(Cog, description="The guild commands available to you"):
     def __init__(self, bot):
         self.bot = bot
@@ -22,25 +28,6 @@ class Guilds(Cog, description="The guild commands available to you"):
 
     def cog_check(self, ctx):
         return approved_guild_only(ctx) and admin_only(ctx)
-
-    # async def member_update(self, member, role, info):
-    #     guild_server = await self.bot.fetch_guild(info["server"])
-    #     if not guild_server:
-    #         return
-    #
-    #     try:
-    #         guild_member = await guild_server.fetch_member(member.id)
-    #     except:
-    #         return
-    #
-    #     dev_server_role = self.dev_server.get_role(role)
-    #
-    #     if member.get_role(role):
-    #         if not (guild_member and guild_member.get_role(info["role"])):
-    #             await member.remove_roles(dev_server_role, reason=f"No longer a member of {guild_server}")
-    #     else:
-    #         if guild_member and guild_member.get_role(info["role"]):
-    #             await member.add_roles(dev_server_role, reason=f"Now a member of {guild_server}")
 
     @Cog.listener()
     async def on_ready(self):
@@ -83,26 +70,110 @@ class Guilds(Cog, description="The guild commands available to you"):
 
     @Cog.listener()
     async def on_member_join(self, member):
-        pass  # TODO if joining a subscribed server, add app. roles
-        # if member.guild == self.dev_server:
-        #     for role, info in CONFIG["guilds"].items():
-        #         await self.member_update(member, role, info)
+        if member.guild.id in Guild.subscribed_servers:
+            owner = (await self.bot.application_info()).owner
+            server_info = Guild.load_subscribed_server_info(member.guild.id)
+
+            for guild in (guild for guild in Guild.supported if not guild.is_special):
+                tracked_server = self.bot.get_guild(guild.server)
+                if tracked_server is None:
+                    await owner.send(embed=await new_embed(title="Invalid Server", description=f"{guild.name} server is missing"))
+                    return
+
+                tracked_role = tracked_server.get_role(guild.role)
+                if tracked_role is None:
+                    await owner.send(embed=await new_embed(title="Invalid Role", description=f"{guild.name} role is missing"))
+                    return
+
+                if member in tracked_role.members:
+                    with contextlib.suppress(Exception):
+                        await member.add_roles(member.guild.get_role(server_info["roles"][guild.name]), reason=f"Now a member of {guild.name}")
 
     @Cog.listener()
     async def on_member_update(self, before, after):
-        pass  # TODO if in subscribed server, add/rem app. roles
-        # if self.dev_server.get_member(after.id):
-        #     member = await self.dev_server.fetch_member(after.id)
-        #     for role, info in CONFIG["guilds"].items():
-        #         await self.member_update(member, role, info)
+        if after.guild.id in Guild.tracked_servers:
+            before_roles, after_roles = set(role.id for role in before.roles), set(role.id for role in after.roles)
+            for tracked_role in Guild.tracked_servers[after.guild.id]:
+                if tracked_role.role in after_roles and tracked_role.role not in before_roles:
+                    for server in (server for server in Guild.subscribed_servers if server != after.guild.id):
+                        with contextlib.suppress(Exception):
+                            subscribed_server = await self.bot.fetch_guild(server)
+                            member = await subscribed_server.fetch_member(after.id)
+                            server_info = Guild.load_subscribed_server_info(server)
+                            await member.add_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"Now a member of {tracked_role.name}")
+                elif tracked_role.role in before_roles and tracked_role.role not in after_roles:
+                    for server in (server for server in Guild.subscribed_servers if server != after.guild.id):
+                        with contextlib.suppress(Exception):
+                            subscribed_server = await self.bot.fetch_guild(server)
+                            member = await subscribed_server.fetch_member(after.id)
+                            server_info = Guild.load_subscribed_server_info(server)
+                            await member.remove_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"No longer a member of {tracked_role.name}")
 
     @Cog.listener()
-    async def on_raw_member_remove(self, member):
-        pass  # TODO if in subscribed server, rem app. roles
-        # if self.dev_server.get_member(member.id):
-        #     member = await self.dev_server.fetch_member(member.id)
-        #     for role, info in CONFIG["guilds"].items():
-        #         await self.member_update(member, role, info)
+    async def on_raw_member_remove(self, payload):
+        if (removed_roles := Guild.tracked_servers.get(payload.guild_id)) is not None:
+            for tracked_role in removed_roles:
+                for server in (server for server in Guild.subscribed_servers if server != payload.guild_id):
+                    with contextlib.suppress(Exception):
+                        subscribed_server = await self.bot.fetch_guild(server)
+                        member = await subscribed_server.fetch_member(payload.user.id)
+                        server_info = Guild.load_subscribed_server_info(server)
+                        await member.remove_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"No longer a member of {tracked_role.name}")
+
+    async def update_subscribed_server_config(self, server: int, error_msg_channel: int = None):
+        server_fp = GUILD_PATH / f"{server}.yaml"
+        subscribed_server = await self.bot.fetch_guild(server)
+        owner = (await self.bot.application_info()).owner
+
+        if subscribed_server is None:
+            await owner.send(embed=await new_embed(title="Invalid Subscriber", description=f"Server ID: {server} cannot be found"))
+            server_fp.unlink(missing_ok=True)
+            return
+
+        if server_fp.exists():
+            with open(server_fp) as f:
+                server_info = yaml.safe_load(f)
+        else:
+            server_info = {"utility": {"index": None, "error-msgs": None}, "roles": {}}
+
+        index = server_info["utility"]["index"]
+        if index is None or (index_role := subscribed_server.get_role(index)) is None:
+            index_role = await subscribed_server.create_role(name="== ECLAIR MANAGED BELOW ==")
+            server_info["utility"]["index"] = index_role.id
+        index_role = subscribed_server.get_role(server_info["utility"]["index"])
+
+        if error_msg_channel:
+            server_info["utility"]["error-msgs"] = error_msg_channel
+
+        tracked_roles = {guild.name: guild for guild in Guild.supported if not guild.is_special and guild.server != server}
+        mirrored_roles = set(server_info["roles"].keys())
+
+        use_icons = "ROLE_ICONS" in subscribed_server.features
+        for missing_role in set(tracked_roles.keys()).difference(mirrored_roles):
+            guild = tracked_roles[missing_role]
+            if use_icons and guild.icon:
+                with open(STATIC_PATH / "misc" / "guild" / f"guild_emblem_{f'{guild.icon}'.zfill(2)}.png", "rb") as f:
+                    role = await subscribed_server.create_role(
+                        name=guild.name, colour=guild.color, display_icon=f.read(), reason="Now tracking role"
+                    )
+            else:
+                role = await subscribed_server.create_role(name=guild.name, colour=guild.color, reason="Now tracking role")
+            server_info["roles"][missing_role] = role.id
+
+        for untracked_role in mirrored_roles.difference(tracked_roles.keys()):
+            role_to_remove = subscribed_server.get_role(server_info["roles"][untracked_role])
+            if role_to_remove:
+                await role_to_remove.delete(reason="No longer tracked")
+            server_info["roles"].pop(untracked_role)
+
+        with open(server_fp, "w") as f:
+            yaml.safe_dump(server_info, f)
+
+        with contextlib.suppress(Exception):
+            mirrored_roles = [subscribed_server.get_role(role) for role in server_info["roles"].values()]
+            await subscribed_server.edit_role_positions({role: index_role.position - 1 for role in mirrored_roles})
+
+        return server_info["roles"]
 
     @tasks.loop(hours=24)
     async def autoguilds(self):
@@ -110,108 +181,50 @@ class Guilds(Cog, description="The guild commands available to you"):
 
         Guild.update()
         tracked_members = {}
+        owner = (await self.bot.application_info()).owner
+
+        # tracked guilds
         for guild in (guild for guild in Guild.supported if not guild.is_special):
-            try:
-                server = self.bot.get_guild(guild.server)
-                tracked_members[guild] = set(server.get_role(guild.role).members)
-            except Exception as exc:
-                print(exc)
-                print(guild.name)
-        # tracked_members = {
-        #     role: None for role in Guild.supported if not role.is_special
-        # }
-        # tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : Beginning Auto-guilds")
-        #
-        # Guild.update()
-        # all_tracked_roles = set(guild.name for guild in Guild.supported)
-        #
-        # role_members = {}
-        # for guild in Guild.supported:
-        #     if guild.is_special:
-        #         continue
-        #     try:
-        #         server = self.bot.get_guild(guild.server)
-        #         role_members[guild] = set(server.get_role(guild.role).members)
-        #     except:
-        #         pass  # TODO tracked roles error messages
-        #
-        # # TODO Don't auto role in the source server
-        #
-        # # TODO Error msgs to subscribed servers & tracked roles
-        # for server in Guild.subscribed_servers:
-        #     server_fp = GUILD_PATH / f"{server}.yaml"
-        #     if not server_fp.exists():
-        #
-        #         subbed_server = await self.bot.fetch_guild(server)
-        #         index = await subbed_server.create_role(name="== ECLAIR MANAGED BELOW ==")
-        #         with open(server_fp, "w") as f:
-        #             yaml.safe_dump({"utility": {"index": index.id, "error-msgs": None}, "roles": {}}, f)
-        #
-        #     with open(server_fp) as f:
-        #         server_info = yaml.safe_load(f)
-        #
-        #     # TODO booted from server
-        #     server = await self.bot.fetch_guild(server)
-        #     await server.fetch_roles()
-        #     index = server.get_role(server_info["utility"]["index"])
-        #
-        #     roles = []
-        #     use_icons = "ROLE_ICONS" in server.features
-        #     for guild in Guild.supported:
-        #         if not guild.is_special and guild.name not in server_info["roles"] and guild.server != server.id:
-        #             if use_icons and guild.icon:
-        #                 with open(
-        #                     STATIC_PATH / "misc" / "guild" / f"guild_emblem_{f'{guild.icon}'.zfill(2)}.png", "rb"
-        #                 ) as f:
-        #                     role = await server.create_role(
-        #                         name=guild.name, colour=guild.color, display_icon=f.read(), reason="Now tracking role"
-        #                     )
-        #             else:
-        #                 role = await server.create_role(name=guild.name, colour=guild.color, reason="Now tracking role")
-        #
-        #             roles.append(role)
-        #             server_info["roles"][guild.name] = role.id
-        #         elif guild.name in server_info["roles"]:
-        #             roles.append(server.get_role(server_info["roles"][guild.name]))
-        #
-        #     deleted_roles = [(role, role_id) for role, role_id in server_info["roles"].items() if role not in all_tracked_roles]
-        #     for role, role_id in deleted_roles:
-        #         untracked_role = server.get_role(role_id)
-        #         await untracked_role.delete(reason="No longer tracked")
-        #         server_info["roles"].pop(role)
-        #
-        #     # TODO try catch error msg
-        #     await server.edit_role_positions({role: index.position - 1 for role in roles})
-        #
-        #     with open(server_fp, "w") as f:
-        #         yaml.safe_dump(server_info, f)
-        #
-        #     all_server_members = set([member async for member in server.fetch_members()])
-        #
-        #     server = self.bot.get_guild(server.id)
-        #     server_role_members = {}
-        #     for guild in Guild.supported:
-        #         # TODO try catch deleted role
-        #         if guild.server == server.id:
-        #             continue
-        #         if guild.is_special:
-        #             continue
-        #         server_role_members[guild] = set(server.get_role(server_info["roles"][guild.name]).members)
-        #
-        #     for role, tracked_members in role_members.items():
-        #         for member in tracked_members:
-        #             if role.server != server.id and member in all_server_members and member not in server_role_members[role]:
-        #                 member = await server.fetch_member(member.id)
-        #                 await member.add_roles(server.get_role(server_info["roles"][role.name]), reason=f"Now a member of {role.name}")
-        #
-        #     for role, tracked_members in server_role_members.items():
-        #         for member in tracked_members:
-        #             if role.server != server.id and member not in role_members[role]:
-        #                 member = await server.fetch_member(member.id)
-        #                 await member.add_roles(server.get_role(server_info["roles"][role.name]), reason=f"No longer a member of {role.name}")
-        #
-        # # TODO Create channel if needed
-        # tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : Completed Auto-guilds")
+            server = self.bot.get_guild(guild.server)
+            if server is None:
+                await owner.send(embed=await new_embed(title="Invalid Server", description=f"{guild.name} server is missing"))
+                continue
+
+            role = server.get_role(guild.role)
+            if role is None:
+                await owner.send(embed=await new_embed(title="Invalid Role", description=f"{guild.name} role is missing"))
+                continue
+
+            await server.chunk()
+            tracked_members[guild] = set(server.get_role(guild.role).members)
+
+        # subscribed servers
+        for server in Guild.subscribed_servers:
+            mirrored_roles = await self.update_subscribed_server_config(server)
+            if not mirrored_roles:
+                continue
+
+            subscribed_server = self.bot.get_guild(server)
+            await subscribed_server.chunk()
+            all_server_members = set([member async for member in subscribed_server.fetch_members()])
+
+            for guild, members in tracked_members.items():
+                if guild.server == server:
+                    continue
+
+                mirrored_members = set(subscribed_server.get_role(mirrored_roles[guild.name]).members)
+
+                for add_member in members.difference(mirrored_members).intersection(all_server_members):
+                    with contextlib.suppress(Exception):
+                        member = await subscribed_server.fetch_member(add_member.id)
+                        await member.add_roles(subscribed_server.get_role(mirrored_roles[guild.name]), reason=f"Now a member of {guild.name}")
+
+                for remove_member in mirrored_members.difference(members).intersection(all_server_members):
+                    with contextlib.suppress(Exception):
+                        member = await subscribed_server.fetch_member(remove_member.id)
+                        await member.remove_roles(subscribed_server.get_role(mirrored_roles[guild.name]), reason=f"No longer a member of {guild.name}")
+
+        tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : Completed Auto-guilds")
 
     @autoguilds.before_loop
     async def before_autoguilds(self):
@@ -246,18 +259,4 @@ class Guilds(Cog, description="The guild commands available to you"):
         await Paginator().start(
             ctx,
             pages=pages,
-        )
-
-    @commands.command(brief="Reconfig", description="Reconfig")
-    async def reconfig(self, ctx):
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            CONFIG.update(yaml.safe_load(f))
-        if not DEBUG:
-            self.autoguilds.cancel()
-            self.autoguilds.start()
-        await send_msg(
-            ctx,
-            title=f"Successful Reconfig",
-            description="Saved config restarted and guild roles have been updated",
-            thumbnail=False,
         )
