@@ -31,8 +31,8 @@ class Guild:
         self.channels = kwargs.get("channels", [])
         self.mod = kwargs.get("mod", CONFIG["optimizer"]["default-mod"])
         self.emoji = kwargs["emoji"]
-        self.icon = kwargs["icon"]
-        self.rank = kwargs["rank"]
+        self.icon = kwargs.get("icon")
+        self.rank = kwargs.get("rank")
         self.is_optimizer = kwargs["optimizer"]
         self.is_special = group == "special"
         self.group = group
@@ -86,6 +86,8 @@ class Guild:
 
     @classmethod
     def load_subscribed_servers(cls):
+        if not SUBSCRIBED_SERVERS.exists():
+            return []
         with open(SUBSCRIBED_SERVERS) as f:
             return [int(server.strip()) for server in f.readlines() if server.strip()]
 

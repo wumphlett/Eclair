@@ -1,0 +1,7 @@
+special:
+  - name: Optimizers # Any name
+    server: <your server id>
+    role: <your role id>
+    mod: <your mod role id>
+    emoji: 📜 # Any emoji
+    optimizer: True # Whether or not this group can optimize
