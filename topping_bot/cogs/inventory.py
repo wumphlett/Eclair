@@ -41,7 +41,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 title="Err: No Topping Inventory",
                 description=[
                     "You have not submitted a topping video.",
-                    "Please use !updateinv <video> to update your inventory.",
+                    "Please use !inv add <video> to update your inventory.",
                     "Use !tutorial to learn more.",
                 ],
             )
@@ -56,11 +56,11 @@ class Inventory(Cog, description="View and update your topping inventory"):
             description=[
                 "You currently have",
                 f"├ {count} Toppings",
-                "Use !updateinv to add more",
+                "Use !inv add to add more",
             ],
         )
 
-    @commands.command(brief="View inv", description="View your topping inventory")
+    @commands.group(brief="View inv", description="View your topping inventory", invoke_without_command=True)
     async def inv(self, ctx):
         fp = DATA_PATH / f"{ctx.message.author.id}.csv"
         if not fp.exists():
@@ -69,7 +69,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 title="Err: No Topping Inventory",
                 description=[
                     "You have not submitted a topping video.",
-                    "Please use !updateinv <video> to update your inventory.",
+                    "Please use !inv add <video> to update your inventory.",
                     "Use !tutorial to learn more.",
                 ],
             )
@@ -83,7 +83,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 title="Err: No Topping Inventory",
                 description=[
                     "Your toppings on file are empty.",
-                    "Please use !updateinv <video> to update your inventory.",
+                    "Please use !inv add <video> to update your inventory.",
                     "Use !tutorial to learn more.",
                 ],
             )
@@ -97,7 +97,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             images = toppings_to_images(toppings, ctx.message.author.id)
 
-            for subset in (images[i : i + 10] for i in range(0, len(images), 10)):
+            for subset in (images[i: i + 10] for i in range(0, len(images), 10)):
                 msg = await channel.send(files=[discord.File(image, filename=image.name) for image in subset])
                 embed_images.extend([attachment.url for attachment in msg.attachments])
                 msgs.append(msg)
@@ -114,23 +114,15 @@ class Inventory(Cog, description="View and update your topping inventory"):
         for fp in images:
             fp.unlink(missing_ok=True)
 
-    @commands.command(checks=[guild_only], brief="Add to inv", description="Add to your topping inventory")
-    async def appendinv(self, ctx):
-        await self.updateinv(ctx, append=True)
-
-    @commands.command(
-        checks=[guild_only], aliases=["uploadinv"], brief="Update inv", description="Update your topping inventory"
-    )
-    async def updateinv(self, ctx, append=parameter(description="mode?", default=False, converter=bool)):
-        command_version = "!updateinv" if not append else "!appendinv"
-
+    @inv.command(aliases=["a"], brief="Add to inv", description="Add to your topping inventory")
+    async def add(self, ctx):
         if not ctx.message.attachments:
             await send_msg(
                 ctx,
                 title="Err: No Topping Video",
                 description=[
                     "You do not have a topping video attached",
-                    f"Please use {command_version} <video> to update your inventory",
+                    f"Please use !inv add <video> to update your inventory",
                     "Use !tutorial to learn more",
                 ],
             )
@@ -144,7 +136,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "You are already running or have queued one CPU task*",
                     f"Please wait for this task to finish before queueing another",
                     "",
-                    "CPU tasks include !optimize, !updateinv, and !appendinv",
+                    "CPU tasks include !optimize and !inv add",
                 ],
             )
             return
@@ -152,13 +144,13 @@ class Inventory(Cog, description="View and update your topping inventory"):
         msg = None
         if SEMAPHORE.locked():
             tqdm.write(
-                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} queued {command_version}"
+                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} queued !inv add"
             )
             msg = await send_msg(
                 ctx,
                 title="Upload Toppings Queued",
                 description=[
-                    f"Your request to {command_version} has been queued",
+                    f"Your request to !inv add has been queued",
                     "",
                     "This will start automatically when ready",
                 ],
@@ -167,7 +159,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
         RUNNING_CPU_TASK[ctx.message.author.id] = None
         async with SEMAPHORE:
             tqdm.write(
-                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began {command_version}"
+                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began !inv add"
             )
             if msg is None:
                 msg = await send_msg(ctx, title="Uploading toppings...", description=["Please wait"])
@@ -187,12 +179,12 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
 
+            topping_fp = DATA_PATH / f"{ctx.message.author.id}.csv"
+
             for idx, attachment in enumerate(ctx.message.attachments):
                 await attachment.save(fp)
 
                 loop = asyncio.get_running_loop()
-
-                topping_fp = DATA_PATH / f"{ctx.message.author.id}.csv"
 
                 shared_memory = SharedMemory(create=True, size=64)
                 with ProcessPoolExecutor() as executor:
@@ -219,7 +211,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 if toppings is None or len(toppings) == 0:
                     await edit_msg(
                         msg,
-                        title=f"Uploading toppings error",
+                        title=f"Uploading toppings error {idx + 1}/{len(ctx.message.attachments)}",
                         description=["Parsing error when reading topping video", "Please contact the admin"],
                     )
                     RUNNING_CPU_TASK.pop(ctx.message.author.id)
@@ -235,8 +227,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     ],
                 )
 
-                append = append or idx > 0
-                write_toppings(toppings, topping_fp, append=append)
+                write_toppings(toppings, topping_fp, append=True)
 
         RUNNING_CPU_TASK.pop(ctx.message.author.id)
 
@@ -247,16 +238,64 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 "Finished.",
                 "",
                 f"Thank you for your patience!",
+                "Use !inv to view your inventory!"
             ],
         )
 
         fp.unlink(missing_ok=True)
-        if not append:
-            await msg.delete()
-            await self.inv(ctx)
+
+    @inv.command(aliases=["del"], brief="Delete inv", description="Delete your topping inventory")
+    async def delete(self, ctx):
+        topping_fp = DATA_PATH / f"{ctx.message.author.id}.csv"
+
+        if not topping_fp.exists():
+            await send_msg(
+                ctx,
+                title="Err: No Topping Inventory",
+                description=[
+                    "You do not have a topping inventory to delete",
+                    f"Please use !inv add <video> to update your inventory",
+                    "Use !tutorial to learn more",
+                ],
+            )
+        else:
+            topping_fp.unlink(missing_ok=True)
+            await send_msg(
+                ctx,
+                title="Deleted Topping Inventory",
+                description=[
+                    "Your topping inventory has been deleted",
+                    f"Please use !inv add <video> to update your inventory",
+                    "Use !tutorial to learn more",
+                ],
+            )
+
+    @commands.command(checks=[guild_only], brief="DEPRECATED", description="DEPRECATED | Use !inv add")
+    async def appendinv(self, ctx):
+        await send_msg(
+            ctx,
+            title="Err: Use !inv add",
+            description=[
+                "!appendinv has been DEPRECATED, please use '!inv add' instead",
+                "Use !tutorial to learn more",
+            ],
+        )
+
+    @commands.command(
+        checks=[guild_only], aliases=["uploadinv"], brief="DEPRECATED", description="DEPRECATED | Use !inv delete & !inv add"
+    )
+    async def updateinv(self, ctx):
+        await send_msg(
+            ctx,
+            title="Err: Use !inv delete & !inv add",
+            description=[
+                "!updateinv has been DEPRECATED, please use '!inv delete' & '!inv add' instead",
+                "Use !tutorial to learn more",
+            ],
+        )
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
-    async def debug(self, ctx, video_id, verbose=False, append=False):
+    async def debug(self, ctx, video_id, verbose=False):
         msg = None
         if SEMAPHORE.locked():
             msg = await send_msg(
@@ -327,7 +366,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
 
-            write_toppings(toppings, topping_fp, append=append)
+            write_toppings(toppings, topping_fp, append=True)
             member = await ctx.guild.fetch_member(video_id)
             name = member.nick if member.nick else member.name
 

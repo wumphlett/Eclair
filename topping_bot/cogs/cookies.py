@@ -50,7 +50,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                 "2. Set your Discord upload quality to Best Quality```",
                 "**RECORD**",
                 "```3. Record a video of your best toppings",
-                "4. Upload your video using the command !updateinv```",
+                "4. Upload your video using the command !inv add```",
                 "**OPTIMIZE**",
                 "```5. Calculate your topping sets with !optimize```",
             ],
@@ -89,7 +89,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                 title="Err: No Topping Inventory",
                 description=[
                     "You have not submitted a topping video",
-                    "Please use !updateinv <attch video> to update your inventory",
+                    "Please use !inv add <attch video> to update your inventory",
                     "Use !tutorial to learn more",
                 ],
             )
@@ -103,7 +103,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                 title="Err: No Topping Inventory",
                 description=[
                     "Your toppings on file are empty",
-                    "Please use !updateinv <attch video> to update your inventory",
+                    "Please use !inv add <attch video> to update your inventory",
                     "Use !tutorial to learn more",
                 ],
             )
@@ -117,7 +117,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     "You are already running or have queued one CPU task*",
                     f"Please wait for this task to finish before queueing another",
                     "",
-                    "*CPU tasks include !optimize, !updateinv, and !appendinv",
+                    "*CPU tasks include !optimize and !inv add",
                 ],
             )
             return
@@ -187,7 +187,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                         title="Err: Low Topping Inventory",
                         description=[
                             "You have less than 5 toppings currently in inventory",
-                            "Please use !updateinv <attch video> to add more toppings",
+                            "Please use !inv add <attch video> to add more toppings",
                         ],
                     )
                     RUNNING_CPU_TASK.pop(user.id, None)
@@ -236,7 +236,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                         description=[
                             "A valid topping set given your current inventory is impossible",
                             "",
-                            "Please use !updateinv <attch video> to add more toppings",
+                            "Please use !inv add <attch video> to add more toppings",
                         ],
                     )
                     RUNNING_CPU_TASK.pop(user.id, None)
