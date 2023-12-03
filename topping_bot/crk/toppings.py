@@ -164,6 +164,9 @@ class Topping:
         short = "short"
         return f"{INFO[self.flavor]['medium']} : {', '.join(f'{INFO[flav][short]} - {sub}' for flav, sub in self.substats[1:])}"
 
+    def __repr__(self):
+        return self.__str__()
+
     def __eq__(self, other):
         return self.substats == other.substats
 

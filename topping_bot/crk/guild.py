@@ -86,6 +86,8 @@ class Guild:
 
     @classmethod
     def load_subscribed_servers(cls):
+        if not SUBSCRIBED_SERVERS.exists():
+            return []
         with open(SUBSCRIBED_SERVERS) as f:
             return [int(server.strip()) for server in f.readlines() if server.strip()]
 
