@@ -21,6 +21,7 @@ err.txt
 # guilds
 guilds/
 !guilds/guilds.yaml
+!guilds/guilds.yaml.template
 
 # misc
 **/*.pyc

@@ -31,8 +31,8 @@ class Guild:
         self.channels = kwargs.get("channels", [])
         self.mod = kwargs.get("mod", CONFIG["optimizer"]["default-mod"])
         self.emoji = kwargs["emoji"]
-        self.icon = kwargs["icon"]
-        self.rank = kwargs["rank"]
+        self.icon = kwargs.get("icon")
+        self.rank = kwargs.get("rank")
         self.is_optimizer = kwargs["optimizer"]
         self.is_special = group == "special"
         self.group = group
