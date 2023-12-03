@@ -188,10 +188,9 @@ class Vitality(Special):
         obj_count = len([top for top in full_set.toppings[len(combo.toppings) :] if top.flavor == Type.DMGRES])
 
         _, bonus = full_set.set_effect(Type.DMGRES)
-        max_dmgres = (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count) * Decimal("6") + bonus
-
-        dmgres += min(combined, max_dmgres)
-        hp = (hp + combined - min(combined, max_dmgres) + self.base_hp) / Decimal("100")
+        max_dmgres = (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus + dmgres
+        dmgres = min(combined, max_dmgres)
+        hp = (hp + combined - dmgres + self.base_hp) / Decimal("100")
         dmgres = (dmgres + self.base_dmgres) / Decimal("100")
 
         return self.vitality(hp, dmgres)
