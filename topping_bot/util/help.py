@@ -52,6 +52,8 @@ ORDERING = {
     ],
     "Inventory": [
         "inv",
+        "inv add",
+        "inv delete",
         "updateinv",
         "appendinv",
         "count",
@@ -168,6 +170,8 @@ class BotHelpCommand(HelpCommand):
             for subcommand in await self.filter_commands(
                 command.commands, sort=True, key=lambda x: command_order(cog, x)
             ):
+                if command.name == "inv": # !inv is a valid command as well as group
+                    yield command
                 async for command in self.leaf_commands(cog, subcommand):
                     yield command
         else:
