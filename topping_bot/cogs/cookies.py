@@ -196,7 +196,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
 
                 progress = await send_msg(ctx, title=f"Solving {cookie.name} ...")
 
-                solution = Array('i', 5)
+                solution = Array("i", 5)
                 shared_memory = SharedMemory(create=True, size=64)
                 process = Process(target=optimize_cookie, args=(optimizer, cookie, shared_memory.name, solution))
                 RUNNING_CPU_TASK[user.id] = process
@@ -205,7 +205,6 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                 start_time = datetime.now()
                 process.start()
                 while process.is_alive():
-
                     desc = bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00")
                     if old_desc != desc and shared_memory.buf[-1] != 1:
                         await edit_msg(progress, title=f"Solving {cookie.name} ...", description=desc)

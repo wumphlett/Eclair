@@ -415,14 +415,17 @@ class AutoGuildSetup(View):
         self.add_item(self.err_channel)
 
         self.message = await ctx.reply(
-            embed=await new_embed(title="Auto-guilds Setup", description=[
-                "Welcome to Auto-Guilds!",
-                "By subscribing, supported members of top-30 guilds will automatically receive roles in your server.",
-                "",
-                "Please select a channel to be used to post error messages",
-                "",
-                "It is recommended that this is a mod only channel"
-            ]),
+            embed=await new_embed(
+                title="Auto-guilds Setup",
+                description=[
+                    "Welcome to Auto-Guilds!",
+                    "By subscribing, supported members of top-30 guilds will automatically receive roles in your server.",
+                    "",
+                    "Please select a channel to be used to post error messages",
+                    "",
+                    "It is recommended that this is a mod only channel",
+                ],
+            ),
             ephemeral=True,
             view=self,
         )
@@ -446,7 +449,6 @@ class AutoGuildSetup(View):
 
         self.result = self.err_channel.values[0]
         await self.cleanup()
-
 
 
 class WipeDataMenu(View):

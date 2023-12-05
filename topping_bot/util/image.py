@@ -77,7 +77,7 @@ TOPPINGS = {
         Type.CD: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.CD]['filename']}.png").resize((101, 148)),
         Type.ATKSPD: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.ATKSPD]['filename']}.png").resize((101, 148)),
         Type.CRIT: Image.open(TOPPING_PATH / "crystal" / f"{INFO[Type.CRIT]['filename']}.png").resize((101, 148)),
-    }
+    },
 }
 STATIC = {
     "font": ImageFont.truetype(str(TOPPING_PATH / "font.otf"), size=38),

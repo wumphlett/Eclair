@@ -256,7 +256,6 @@ class Order:
         legendary_plus = 0
 
         for cookie in args:
-
             if cookie != "*":
                 cookie = Cookie.get(cookie)
 
