@@ -98,6 +98,9 @@ ORDERING = {
         "rules",
     ],
     "Guilds": [
+        "guild",
+        "guild subscribe",
+        "guild cancel",
         "guilds",
     ],
     "COGS": ["Cookies", "Inventory", "RequirementFiles", "Stats", "Community", "Utility", "Guilds"],

@@ -1,3 +1,4 @@
+import asyncio
 import traceback
 from collections import defaultdict
 import contextlib
@@ -10,13 +11,19 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Cog
 
 from topping_bot.crk.guild import Guild
-from topping_bot.util.common import admin_only, approved_guild_only, new_embed, send_msg
-from topping_bot.util.const import CONFIG, CONFIG_FILE, DEBUG, GUILD_PATH, STATIC_PATH
-from topping_bot.ui.common import Paginator
+from topping_bot.util.common import admin_only, approved_guild_only, guild_only, new_embed, send_msg, server_admin_only
+from topping_bot.util.const import CONFIG, DEBUG, GUILD_PATH, STATIC_PATH
+from topping_bot.ui.common import AutoGuildSetup, Paginator
 
 
 """
-TODO Register Subscribed Server
+TODO
+- register/setup for subscribed server
+  - requires err channel & actually using err channel
+  - add to servers.txt
+  - trigger server setup
+  - trigger daily auto-guilds
+- unsubscribe? what that looks like
 """
 
 
@@ -27,7 +34,7 @@ class Guilds(Cog, description="The guild commands available to you"):
         Guild.update()
 
     def cog_check(self, ctx):
-        return approved_guild_only(ctx) and admin_only(ctx)
+        return approved_guild_only(ctx)
 
     @Cog.listener()
     async def on_ready(self):
@@ -86,8 +93,17 @@ class Guilds(Cog, description="The guild commands available to you"):
                     return
 
                 if member in tracked_role.members:
-                    with contextlib.suppress(Exception):
+                    try:
                         await member.add_roles(member.guild.get_role(server_info["roles"][guild.name]), reason=f"Now a member of {guild.name}")
+                    except:
+                        with contextlib.suppress(Exception):
+                            error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                            await error_channel.send(
+                                embed=await new_embed(
+                                    title="Err: Member Join",
+                                    description=f"Could not add {member} to {guild.name}"
+                                )
+                            )
 
     @Cog.listener()
     async def on_member_update(self, before, after):
@@ -96,29 +112,56 @@ class Guilds(Cog, description="The guild commands available to you"):
             for tracked_role in Guild.tracked_servers[after.guild.id]:
                 if tracked_role.role in after_roles and tracked_role.role not in before_roles:
                     for server in (server for server in Guild.subscribed_servers if server != after.guild.id):
-                        with contextlib.suppress(Exception):
+                        server_info = Guild.load_subscribed_server_info(server)
+                        try:
                             subscribed_server = await self.bot.fetch_guild(server)
                             member = await subscribed_server.fetch_member(after.id)
-                            server_info = Guild.load_subscribed_server_info(server)
                             await member.add_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"Now a member of {tracked_role.name}")
+                        except:
+                            with contextlib.suppress(Exception):
+                                error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                                await error_channel.send(
+                                    embed=await new_embed(
+                                        title="Err: Member Update",
+                                        description=f"Could not update members of {tracked_role.name}"
+                                    )
+                                )
                 elif tracked_role.role in before_roles and tracked_role.role not in after_roles:
                     for server in (server for server in Guild.subscribed_servers if server != after.guild.id):
-                        with contextlib.suppress(Exception):
+                        server_info = Guild.load_subscribed_server_info(server)
+                        try:
                             subscribed_server = await self.bot.fetch_guild(server)
                             member = await subscribed_server.fetch_member(after.id)
-                            server_info = Guild.load_subscribed_server_info(server)
                             await member.remove_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"No longer a member of {tracked_role.name}")
+                        except:
+                            with contextlib.suppress(Exception):
+                                error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                                await error_channel.send(
+                                    embed=await new_embed(
+                                        title="Err: Member Update",
+                                        description=f"Could not update members of {tracked_role.name}"
+                                    )
+                                )
 
     @Cog.listener()
     async def on_raw_member_remove(self, payload):
         if (removed_roles := Guild.tracked_servers.get(payload.guild_id)) is not None:
             for tracked_role in removed_roles:
                 for server in (server for server in Guild.subscribed_servers if server != payload.guild_id):
-                    with contextlib.suppress(Exception):
+                    server_info = Guild.load_subscribed_server_info(server)
+                    try:
                         subscribed_server = await self.bot.fetch_guild(server)
                         member = await subscribed_server.fetch_member(payload.user.id)
-                        server_info = Guild.load_subscribed_server_info(server)
                         await member.remove_roles(subscribed_server.get_role(server_info["roles"][tracked_role.name]), reason=f"No longer a member of {tracked_role.name}")
+                    except:
+                        with contextlib.suppress(Exception):
+                            error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                            await error_channel.send(
+                                embed=await new_embed(
+                                    title="Err: Member Remove",
+                                    description=f"Could not update removed members of {tracked_role.name}"
+                                )
+                            )
 
     async def update_subscribed_server_config(self, server: int, error_msg_channel: int = None):
         server_fp = GUILD_PATH / f"{server}.yaml"
@@ -140,7 +183,6 @@ class Guilds(Cog, description="The guild commands available to you"):
         if index is None or (index_role := subscribed_server.get_role(index)) is None:
             index_role = await subscribed_server.create_role(name="== ECLAIR MANAGED BELOW ==")
             server_info["utility"]["index"] = index_role.id
-        index_role = subscribed_server.get_role(server_info["utility"]["index"])
 
         if error_msg_channel:
             server_info["utility"]["error-msgs"] = error_msg_channel
@@ -169,9 +211,19 @@ class Guilds(Cog, description="The guild commands available to you"):
         with open(server_fp, "w") as f:
             yaml.safe_dump(server_info, f)
 
-        with contextlib.suppress(Exception):
+        await asyncio.sleep(2)  # let roles finish creation before moving
+        try:
             mirrored_roles = [subscribed_server.get_role(role) for role in server_info["roles"].values()]
             await subscribed_server.edit_role_positions({role: index_role.position - 1 for role in mirrored_roles})
+        except:
+            with contextlib.suppress(Exception):
+                error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                await error_channel.send(
+                    embed=await new_embed(
+                        title="Err: Move Roles",
+                        description=f"Could not move managed roles below '== ECLAIR MANAGED BELOW =='"
+                    )
+                )
 
         return server_info["roles"]
 
@@ -205,6 +257,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                 continue
 
             subscribed_server = self.bot.get_guild(server)
+            server_info = Guild.load_subscribed_server_info(subscribed_server.id)
             await subscribed_server.chunk()
             all_server_members = set([member async for member in subscribed_server.fetch_members()])
 
@@ -215,14 +268,32 @@ class Guilds(Cog, description="The guild commands available to you"):
                 mirrored_members = set(subscribed_server.get_role(mirrored_roles[guild.name]).members)
 
                 for add_member in members.difference(mirrored_members).intersection(all_server_members):
-                    with contextlib.suppress(Exception):
+                    try:
                         member = await subscribed_server.fetch_member(add_member.id)
                         await member.add_roles(subscribed_server.get_role(mirrored_roles[guild.name]), reason=f"Now a member of {guild.name}")
+                    except:
+                        with contextlib.suppress(Exception):
+                            error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                            await error_channel.send(
+                                embed=await new_embed(
+                                    title="Err: Daily Member Update",
+                                    description=f"Could not add members to {guild.name}"
+                                )
+                            )
 
                 for remove_member in mirrored_members.difference(members).intersection(all_server_members):
-                    with contextlib.suppress(Exception):
+                    try:
                         member = await subscribed_server.fetch_member(remove_member.id)
                         await member.remove_roles(subscribed_server.get_role(mirrored_roles[guild.name]), reason=f"No longer a member of {guild.name}")
+                    except:
+                        with contextlib.suppress(Exception):
+                            error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
+                            await error_channel.send(
+                                embed=await new_embed(
+                                    title="Err: Daily Member Update",
+                                    description=f"Could not add members to {guild.name}"
+                                )
+                            )
 
         tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : Completed Auto-guilds")
 
@@ -230,7 +301,99 @@ class Guilds(Cog, description="The guild commands available to you"):
     async def before_autoguilds(self):
         await self.bot.wait_until_ready()
 
-    @commands.command(brief="Guilds", description="Guilds")
+    @commands.group(aliases=["g"], checks=[guild_only, server_admin_only], brief="Guilds", description="Guilds", invoke_without_command=True)
+    async def guild(self, ctx):
+        pass
+
+    @guild.command(checks=[guild_only, server_admin_only], brief="Subscribe to auto-guilds", description="Subscribe to auto-guilds")
+    async def subscribe(self, ctx):
+        if not ctx.guild.me.guild_permissions.manage_roles:
+            await send_msg(
+                ctx,
+                title="Err: Needs Manage Roles",
+                description=[
+                    "In order to subscribe to auto-guilds, the bot must have the 'Manage Roles' permission",
+                    "",
+                    "Please grant the bot this permission and try again",
+                ],
+            )
+            return
+
+        autoguild_setup = AutoGuildSetup()
+        await autoguild_setup.start(ctx, None)
+
+        timeout = await autoguild_setup.wait()
+        if timeout or not autoguild_setup.result:
+            return
+
+        error_channel = await autoguild_setup.result.fetch()
+        permissions = error_channel.permissions_for(ctx.guild.me)
+
+        if not permissions.send_messages:
+            await send_msg(
+                ctx,
+                title="Err: Cannot Send in Error Channel",
+                description=[
+                    "In order to subscribe to auto-guilds, the bot must be able to write messages in the specified error channel",
+                    "",
+                    "Please grant the bot this permission and try again",
+                ],
+            )
+            return
+
+        Guild.subscribed_servers.append(ctx.guild.id)
+        Guild.dump_subscribed_servers()
+
+        await send_msg(
+            ctx,
+            title="Successfully Subscribed to Auto-Guilds",
+            description=[
+                "Congratulations!",
+                "",
+                "You have successfully subscribed to auto-guilds",
+                "Members of top-30 guilds will automatically be given roles in your server"
+            ],
+        )
+
+        await self.update_subscribed_server_config(ctx.guild.id, error_channel.id)
+        await self.autoguilds()
+
+    @guild.command(checks=[guild_only, server_admin_only], brief="Cancel auto-guilds", description="Cancel auto-guilds")
+    async def cancel(self, ctx):
+        server_fp = GUILD_PATH / f"{ctx.guild.id}.yaml"
+        if not server_fp.exists():
+            await send_msg(
+                ctx,
+                title="Err: Server Not Subscribed",
+                description=[
+                    "Your server is not subscribed to auto-guilds",
+                    "To change this, use !guild subscribe",
+                ],
+            )
+            return
+
+        Guild.subscribed_servers = [server for server in Guild.subscribed_servers if server != ctx.guild.id]
+        Guild.dump_subscribed_servers()
+
+        with open(server_fp) as f:
+            server_info = yaml.safe_load(f)
+        for role in server_info["roles"].values():
+            with contextlib.suppress(Exception):
+                role_to_delete = ctx.guild.get_role(role)
+                await role_to_delete.delete(reason="Unsubscribed from auto-guilds")
+
+        server_fp.unlink(missing_ok=True)
+
+        await send_msg(
+            ctx,
+            title="Unsubscribed From Auto-guilds",
+            description=[
+                "Your server has successfully unsubscribed to auto-guilds",
+                "To change this, use !guild subscribe",
+            ],
+        )
+
+    @commands.command(checks=[admin_only], brief="List guilds", description="List guilds")
     async def guilds(self, ctx, idx: int = None, search: str = ""):
         guild_list = sorted(ctx.bot.guilds, key=lambda x: -x.member_count)
         if idx is not None:

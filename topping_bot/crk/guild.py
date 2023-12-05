@@ -96,3 +96,8 @@ class Guild:
         server_fp = GUILD_PATH / f"{server}.yaml"
         with open(server_fp) as f:
             return yaml.safe_load(f)
+
+    @classmethod
+    def dump_subscribed_servers(cls):
+        with open(SUBSCRIBED_SERVERS, "w") as f:
+            f.writelines((f"{server}\n" for server in cls.subscribed_servers))
