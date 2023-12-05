@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 import discord
-from discord import ButtonStyle
+from discord import ButtonStyle, ChannelType
 from discord.ext import commands
-from discord.ui import Button, Select, View
+from discord.ui import Button, ChannelSelect, Select, View
 
 from topping_bot.crk.toppings import Topping
 from topping_bot.optimize.reader import write_toppings
@@ -392,6 +392,61 @@ class OverwriteConfirm(View):
             embed = await new_embed(title="Hey!", description="This is not your req file!", color=discord.Colour.red())
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await self.deny()
+
+
+class AutoGuildSetup(View):
+    ctx: Any
+    message: Any
+
+    err_channel: Any
+    result: Any
+
+    def __init__(self, *, timeout: Optional[int] = 60):
+        super().__init__(timeout=timeout)
+
+    async def start(self, ctx, member):
+        if isinstance(ctx, discord.Interaction):
+            ctx = await commands.Context.from_interaction(ctx)
+
+        self.ctx = ctx
+
+        self.err_channel = ChannelSelect(placeholder="Mod Channel", channel_types=[ChannelType.text])
+        self.err_channel.callback = self.err_channel_callback
+        self.add_item(self.err_channel)
+
+        self.message = await ctx.reply(
+            embed=await new_embed(title="Auto-guilds Setup", description=[
+                "Welcome to Auto-Guilds!",
+                "By subscribing, supported members of top-30 guilds will automatically receive roles in your server.",
+                "",
+                "Please select a channel to be used to post error messages",
+                "",
+                "It is recommended that this is a mod only channel"
+            ]),
+            ephemeral=True,
+            view=self,
+        )
+
+    async def cleanup(self):
+        self.stop()
+        await self.message.delete(delay=1)
+
+    async def on_timeout(self):
+        await self.cleanup()
+
+    async def on_error(self, interaction, error, item):
+        await self.cleanup()
+
+    async def err_channel_callback(self, interaction):
+        if interaction.user != self.ctx.author:
+            embed = await new_embed(
+                title="Hey!", description="This is not your auto-guild setup!", color=discord.Colour.red()
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        self.result = self.err_channel.values[0]
+        await self.cleanup()
+
 
 
 class WipeDataMenu(View):

@@ -29,6 +29,9 @@ def moderator_only(ctx, member_id=None):
 def admin_only(ctx):
     return ctx.bot.is_owner(ctx.author)
 
+def server_admin_only(ctx):
+    return ctx.message.author.guild_permissions.administrator
+
 
 def approved_guild_only(ctx):
     return approved_guild_ctx(ctx) is not None
