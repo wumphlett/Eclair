@@ -3,6 +3,8 @@ The CRK Eclair Discord Bot!
   
 https://eclair.community/add-bot
 
+https://discord.gg/r6ZQFcRUK7
+
 ## Features
 - Topping Optimization
 - Stat Math
