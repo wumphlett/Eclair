@@ -254,6 +254,7 @@ class Guilds(Cog, description="The guild commands available to you"):
         async def reorder_roles():
             await subscribed_server.fetch_roles()
             matched_roles = [subscribed_server.get_role(matched_role) for matched_role in server_info["roles"].values()]
+            print(matched_roles)
             await subscribed_server.edit_role_positions(
                 {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(matched_roles)}
             )
@@ -374,6 +375,17 @@ class Guilds(Cog, description="The guild commands available to you"):
         checks=[guild_only, server_admin_only], brief="Subscribe to auto-guilds", description="Subscribe to auto-guilds"
     )
     async def subscribe(self, ctx):
+        if ctx.guild.id in Guild.subscribed_servers:
+            await send_msg(
+                ctx,
+                title="Err: Server Already Subscribed",
+                description=[
+                    "Your server is already subscribed to auto-guilds",
+                    "To change this, use !guild cancel",
+                ],
+            )
+            return
+
         if not ctx.guild.me.guild_permissions.manage_roles:
             await send_msg(
                 ctx,
