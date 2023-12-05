@@ -9,10 +9,6 @@ Up Next:
 
 [ ] Bolster /cookie in general w/ info
 
-[ ] Eff rewrites of loops. Do it through role.members
-[ ] Restructure guild system
-[ ] Fix !reconfig
-
 [ ] !vote, add if not in, remove if in. Allow some ppl to call for votes
    [ ] Also take results after a few hours, auto update meta list
    [ ] Has to be resistant to restarts (persistent ui)
@@ -23,13 +19,6 @@ Up Next:
 
 [ ] demo command
 [ ] On join, dm server owner linking to bot dev server as well as advertising useful features
-
-[ ] RoLi/Brandon long sherb solves
-[ ] Brandon impossible donut solve
-[ ] RoLi long marg solve
-[ ] Vitality speedup, partial aware for min dmr/hp
-
-[ ] Matcha?
 
 [ ] Update data
 

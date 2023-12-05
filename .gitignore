@@ -27,5 +27,9 @@ guilds/
 **/*.pyc
 **/*.whl
 
+# announcements
+info/update.txt
+info/secret.txt
+
 # models
 models/
