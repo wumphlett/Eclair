@@ -38,6 +38,9 @@ class Optimizer:
         self.inventory = [topping for topping in self.inventory if topping not in self.solution.toppings]
         self.cookies[name] = self.solution
 
+    def set_solution(self, indices: List[int]):
+        self.solution = ToppingSet([self.inventory[i] for i in indices])
+
     def solve(self, reqs: Requirements):
         """Solves a cookies needed toppings given a set of requirements"""
         self.reqs = reqs
