@@ -1,7 +1,8 @@
 import asyncio
 import json
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
+from multiprocessing import Process
+from multiprocessing.sharedctypes import Array
 from multiprocessing.shared_memory import SharedMemory
 from pathlib import Path
 
@@ -195,41 +196,52 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
 
                 progress = await send_msg(ctx, title=f"Solving {cookie.name} ...")
 
-                loop = asyncio.get_running_loop()
-
+                solution = Array('i', 5)
                 shared_memory = SharedMemory(create=True, size=64)
-                RUNNING_CPU_TASK[user.id] = shared_memory.name
-                with ProcessPoolExecutor() as executor:
-                    task = loop.run_in_executor(executor, optimize_cookie, optimizer, cookie, shared_memory.name)
+                process = Process(target=optimize_cookie, args=(optimizer, cookie, shared_memory.name, solution))
+                RUNNING_CPU_TASK[user.id] = process
 
-                    old_desc = ""
-                    cancelling = False
-                    start_time = datetime.now()
-                    while not task.done():
+                old_desc = ""
+                start_time = datetime.now()
+                process.start()
+                while process.is_alive():
 
-                        desc = bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00")
-                        if old_desc != desc and shared_memory.buf[-1] != 1:
-                            await edit_msg(progress, title=f"Solving {cookie.name} ...", description=desc)
-                            old_desc = desc
-                        elif shared_memory.buf[-1] == 1:
-                            await edit_msg(progress, title=f"Solving {cookie.name} Stopping", description="Stopping...")
+                    desc = bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00")
+                    if old_desc != desc and shared_memory.buf[-1] != 1:
+                        await edit_msg(progress, title=f"Solving {cookie.name} ...", description=desc)
+                        old_desc = desc
+                    elif shared_memory.buf[-1] == 1:
+                        await edit_msg(progress, title=f"Solving {cookie.name} Stopping", description="Stopping...")
 
-                        await asyncio.sleep(2)
+                    await asyncio.sleep(2)
 
-                        if not cancelling and start_time + timedelta(minutes=20) < datetime.now():
-                            cancel_memory = SharedMemory(name=shared_memory.name)
-                            cancel_memory.buf[-1] = 1
-                            cancelling = True
+                    if not cancelled and start_time + timedelta(minutes=20) < datetime.now():
+                        cancel_memory = SharedMemory(name=shared_memory.name)
+                        cancel_memory.buf[-1] = 1
+                        cancelled = True
 
-                RUNNING_CPU_TASK[user.id] = None
+                    if cancelled and start_time + timedelta(minutes=22) < datetime.now():
+                        process.terminate()
+
                 shared_memory.close()
                 shared_memory.unlink()
 
-                optimizer.solution, cancelled = task.result()
-
                 await progress.delete()
 
-                if optimizer.solution is None:
+                if process.exitcode != 0:
+                    await send_msg(
+                        ctx,
+                        title="Err: Solve Forcibly Stopped",
+                        description=[
+                            "The topping set solve was forcibly stopped either by extended timeout or !stop",
+                            "",
+                            "If this is unexpected, please optimize your requirements or contact the admin",
+                        ],
+                        footer=f"admin: @{(await ctx.bot.application_info()).owner}",
+                    )
+                    RUNNING_CPU_TASK.pop(user.id, None)
+                    return
+                elif not any(solution[:]):
                     await send_msg(
                         ctx,
                         title="Err: No Solution Found",
@@ -242,6 +254,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     RUNNING_CPU_TASK.pop(user.id, None)
                     return
 
+                optimizer.set_solution(solution)
                 optimizer.reqs = cookie
                 optimizer.select(cookie.name)
 
@@ -291,18 +304,20 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
         cookie_img.unlink(missing_ok=True)
         await RemoveToppingsMenu(timeout=600).start(ctx, user, toppings=optimizer.inventory, fp=topping_fp)
 
-    @commands.command(brief="Stop", description="Stop a running optimization")
+    @commands.command(brief="Stop", description="Stop a running cpu task")
     async def stop(self, ctx):
         if RUNNING_CPU_TASK.get(ctx.message.author.id):
-            shared_memory = SharedMemory(name=RUNNING_CPU_TASK[ctx.message.author.id])
-            shared_memory.buf[-1] = 1
+            process = RUNNING_CPU_TASK[ctx.message.author.id]
+            process.terminate()
             RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
             await send_msg(
                 ctx,
                 title="Stopping Task",
                 description=[
-                    "Your running optimization is being stopped",
+                    "Your running cpu task is being stopped",
                 ],
             )
         elif await ctx.bot.is_owner(ctx.author):
-            pass  # TODO Stop all tasks?
+            for k, process in RUNNING_CPU_TASK.items():
+                process.terminate()
+            RUNNING_CPU_TASK.clear()

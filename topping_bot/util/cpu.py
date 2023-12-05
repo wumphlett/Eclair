@@ -2,10 +2,10 @@ from multiprocessing.shared_memory import SharedMemory
 
 from tqdm import tqdm
 
-from topping_bot.optimize.reader import extract_topping_data, extract_unique_frames
+from topping_bot.optimize.reader import extract_topping_data, extract_unique_frames, write_toppings
 
 
-def full_extraction(fp, shared_mem_name, debug=False, verbose=False):
+def full_extraction(fp, topping_fp, shared_mem_name, solution, debug=False, verbose=False):
     shared_memory = SharedMemory(name=shared_mem_name)
     toppings = []
 
@@ -30,11 +30,12 @@ def full_extraction(fp, shared_mem_name, debug=False, verbose=False):
     shared_memory.close()
     pbar.close()
 
-    return toppings
+    if toppings is not None:
+        write_toppings(toppings, topping_fp, append=True)
+        solution.value = len(toppings)
 
 
-def optimize_cookie(optimizer, cookie, shared_mem_name):
-    cancelled = False
+def optimize_cookie(optimizer, cookie, shared_mem_name, solution):
     shared_memory = SharedMemory(name=shared_mem_name)
 
     pbar = tqdm(
@@ -49,7 +50,6 @@ def optimize_cookie(optimizer, cookie, shared_mem_name):
 
     for _ in optimizer.solve(cookie):
         if shared_memory.buf[-1] == 1:
-            cancelled = True
             break
         elif pbar.update(1):
             byte_pbar = pbar.format_meter(**pbar.format_dict).encode(encoding="utf-8")
@@ -58,4 +58,6 @@ def optimize_cookie(optimizer, cookie, shared_mem_name):
     shared_memory.close()
     pbar.close()
 
-    return optimizer.solution, cancelled
+    if optimizer.solution:
+        for i, topping in enumerate(optimizer.solution.toppings):
+            solution[i] = optimizer.inventory.index(topping)

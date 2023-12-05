@@ -1,6 +1,7 @@
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+from multiprocessing import Process
+from multiprocessing.sharedctypes import Value
 from multiprocessing.shared_memory import SharedMemory
 
 import discord
@@ -8,10 +9,9 @@ from discord.ext import commands
 from discord.ext.commands import Cog, parameter
 from tqdm import tqdm
 
-from topping_bot.optimize.reader import read_toppings, write_toppings
+from topping_bot.optimize.reader import read_toppings
 from topping_bot.util.common import (
     admin_only,
-    approved_guild_ctx,
     approved_guild_only,
     edit_msg,
     guild_only,
@@ -162,16 +162,16 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began !inv add"
             )
             if msg is None:
-                msg = await send_msg(ctx, title="Uploading toppings...", description=["Please wait"])
+                msg = await send_msg(ctx, title="Uploading Toppings...", description=["Please wait"])
             else:
-                await edit_msg(msg, title="Uploading toppings...", description=["Please wait"])
+                await edit_msg(msg, title="Uploading Toppings...", description=["Please wait"])
 
             fp = TMP_PATH / f"{ctx.message.author.id}.mp4"
             fp.unlink(missing_ok=True)
 
             await edit_msg(
                 msg,
-                title=f"Uploading toppings...",
+                title=f"Uploading Toppings...",
                 description=[
                     "Please wait",
                     "",
@@ -184,56 +184,60 @@ class Inventory(Cog, description="View and update your topping inventory"):
             for idx, attachment in enumerate(ctx.message.attachments):
                 await attachment.save(fp)
 
-                loop = asyncio.get_running_loop()
-
+                solution = Value('i', -1)
                 shared_memory = SharedMemory(create=True, size=64)
-                with ProcessPoolExecutor() as executor:
-                    task = loop.run_in_executor(executor, full_extraction, fp, shared_memory.name)
+                process = Process(target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution))
+                RUNNING_CPU_TASK[ctx.message.author.id] = process
 
-                    while not task.done():
-                        await edit_msg(
-                            msg,
-                            title=f"Uploading toppings...",
-                            description=[
-                                f"Video {idx + 1}/{len(ctx.message.attachments)}",
-                                "",
-                                f"Discovering toppings",
-                                bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00"),
-                            ],
-                        )
-                        await asyncio.sleep(2)
-
-                    shared_memory.close()
-                    shared_memory.unlink()
-
-                    toppings = task.result()
-
-                if toppings is None or len(toppings) == 0:
+                process.start()
+                while process.is_alive():
                     await edit_msg(
                         msg,
-                        title=f"Uploading toppings error {idx + 1}/{len(ctx.message.attachments)}",
-                        description=["Parsing error when reading topping video", "Please contact the admin"],
+                        title=f"Uploading Toppings...",
+                        description=[
+                            f"Video {idx + 1}/{len(ctx.message.attachments)}",
+                            "",
+                            f"Discovering toppings",
+                            bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00"),
+                        ],
                     )
-                    RUNNING_CPU_TASK.pop(ctx.message.author.id)
+                    await asyncio.sleep(2)
+
+                shared_memory.close()
+                shared_memory.unlink()
+
+                toppings = solution
+
+                if process.exitcode != 0:
+                    await send_msg(
+                        ctx,
+                        title="Err: Upload Forcibly Stopped",
+                        description=[
+                            "The upload was forcibly stopped either by extended timeout or !stop",
+                            "",
+                            "If this is unexpected, please contact the admin",
+                        ],
+                        footer=f"admin: @{(await ctx.bot.application_info()).owner}",
+                    )
+                    fp.unlink(missing_ok=True)
+                    RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
+                    return
+                elif toppings.value <= 0:
+                    await edit_msg(
+                        msg,
+                        title=f"Err: Uploading Toppings {idx + 1}/{len(ctx.message.attachments)}",
+                        description=["Parsing error when reading topping video", "Please contact the admin"],
+                        footer=f"admin: @{(await ctx.bot.application_info()).owner}",
+                    )
+                    fp.unlink(missing_ok=True)
+                    RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
                     return
 
-                await edit_msg(
-                    msg,
-                    title=f"Uploading toppings...",
-                    description=[
-                        f"Video {idx + 1}/{len(ctx.message.attachments)}",
-                        "",
-                        f"Saving toppings",
-                    ],
-                )
-
-                write_toppings(toppings, topping_fp, append=True)
-
-        RUNNING_CPU_TASK.pop(ctx.message.author.id)
+        RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
 
         await edit_msg(
             msg,
-            title=f"Uploading toppings complete",
+            title=f"Uploading Toppings Complete",
             description=[
                 "Finished.",
                 "",
@@ -320,33 +324,43 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             fp = TMP_PATH / f"{video_id}.mp4"
 
-            loop = asyncio.get_running_loop()
-
             topping_fp = DATA_PATH / f"{video_id}.csv"
 
+            solution = Value('i', -1)
             shared_memory = SharedMemory(create=True, size=64)
-            with ProcessPoolExecutor() as executor:
-                task = loop.run_in_executor(executor, full_extraction, fp, shared_memory.name, True, verbose)
+            process = Process(target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution, True, verbose))
+            while process.is_alive():
+                await edit_msg(
+                    msg,
+                    title=f"Debugging toppings...",
+                    description=[
+                        "Please wait",
+                        "",
+                        f"Discovering toppings",
+                        bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00"),
+                    ],
+                )
+                await asyncio.sleep(2)
 
-                while not task.done():
-                    await edit_msg(
-                        msg,
-                        title=f"Debugging toppings...",
-                        description=[
-                            "Please wait",
-                            "",
-                            f"Discovering toppings",
-                            bytes(shared_memory.buf[:]).decode(encoding="utf-8", errors="ignore").rstrip("\x00"),
-                        ],
-                    )
-                    await asyncio.sleep(2)
+            shared_memory.close()
+            shared_memory.unlink()
 
-                shared_memory.close()
-                shared_memory.unlink()
+            toppings = solution
 
-                toppings = task.result()
-
-            if toppings is None or len(toppings) == 0:
+            if process.exitcode != 0:
+                await send_msg(
+                    ctx,
+                    title="Err: Debug Forcibly Stopped",
+                    description=[
+                        "The debug was forcibly stopped either by extended timeout or !stop",
+                        "",
+                        "If this is unexpected, please contact the admin",
+                    ],
+                    footer=f"admin: @{(await ctx.bot.application_info()).owner}",
+                )
+                RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
+                return
+            elif toppings.value <= 0:
                 await edit_msg(
                     msg,
                     title=f"Debugging toppings error",
@@ -356,17 +370,6 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 )
                 return
 
-            await edit_msg(
-                msg,
-                title=f"Debugging toppings...",
-                description=[
-                    "Please wait",
-                    "",
-                    f"Saving toppings",
-                ],
-            )
-
-            write_toppings(toppings, topping_fp, append=True)
             member = await ctx.guild.fetch_member(video_id)
             name = member.nick if member.nick else member.name
 

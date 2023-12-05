@@ -95,7 +95,7 @@ class Community(Cog, description="Helper commands available to all!"):
                 "https://eclair.community/add-bot",
             ],
             wrap=False,
-            footer=f"admin: {(await ctx.bot.application_info()).owner}",
+            footer=f"admin: @{(await ctx.bot.application_info()).owner}",
         )
 
     @cooldown(1, 1, BucketType.user)
