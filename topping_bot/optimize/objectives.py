@@ -9,9 +9,6 @@ from typing import Iterable, List
 from topping_bot.crk.toppings import Topping, ToppingSet, Type
 
 
-# TODO upper and maybe floor aware of current combo for vitality/edmg
-
-
 class Objective:
     type = None
 
