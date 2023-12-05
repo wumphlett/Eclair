@@ -138,7 +138,7 @@ def image_midline(image):
     return round(np.sum(dx * np.arange(X)))
 
 
-def toppings_to_images(toppings: List[Topping], user_id):
+def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
     images = []
 
     for i, subset in enumerate(toppings[i : i + 25] for i in range(0, len(toppings), 25)):
@@ -180,6 +180,14 @@ def toppings_to_images(toppings: List[Topping], user_id):
                     stroke_fill="rgb(0, 0, 0)",
                     stroke_width=2,
                     align="right",
+                )
+                show_index and draw.text(
+                    (x - 10, y + 160), 
+                    str(i * 25 + y_mult * 5 + x_mult),
+                    font=STATIC["font"], 
+                    fill="rgb(255, 255, 0)",
+                    stroke_fill="rgb(0, 0, 0)",
+                    stroke_width=2,
                 )
 
         image.save(fp)

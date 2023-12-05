@@ -161,7 +161,7 @@ class RemoveToppingsMenu(View):
         super().__init__(timeout=timeout)
         self.inner = inner
 
-    async def start(self, ctx, member, toppings: List[Topping], fp: Path):
+    async def start(self, ctx, member, toppings: List[Topping], fp: Path, embed_image=None):
         if isinstance(ctx, discord.Interaction):
             ctx = await commands.Context.from_interaction(ctx)
 
@@ -170,6 +170,7 @@ class RemoveToppingsMenu(View):
 
         self.toppings = toppings
         self.fp = fp
+        self.embed_image = embed_image
 
         self.yes_button = Button(label="Remove", style=ButtonStyle.danger)
         self.yes_button.callback = self.yes_button_callback
@@ -186,11 +187,19 @@ class RemoveToppingsMenu(View):
             title = "Remove Toppings?"
             desc = "Would you like to remove the used toppings from your inventory?"
 
+        embed_params = {
+            "title": title,
+            "description": desc, 
+        }
+
+        if self.embed_image:
+            embed_params.update({
+                "image": self.embed_image,
+                "thumbnail": False
+            })
+
         self.message = await ctx.reply(
-            embed=await new_embed(
-                title=title,
-                description=desc,
-            ),
+            embed=await new_embed(**embed_params),
             ephemeral=True,
             view=self,
         )
@@ -200,7 +209,7 @@ class RemoveToppingsMenu(View):
             self.stop()
             await self.cleanup()
             await RemoveToppingsMenu(timeout=self.timeout, inner=True).start(
-                self.ctx, self.member, toppings=self.toppings, fp=self.fp
+                self.ctx, self.member, toppings=self.toppings, fp=self.fp, embed_image=self.embed_image
             )
         if self.inner:
             write_toppings(self.toppings, self.fp)
