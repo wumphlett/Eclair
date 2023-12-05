@@ -74,12 +74,12 @@ class Optimizer:
         )
 
     def _best_objective(self, candidate: ToppingSet):
-        # if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
-        #     tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
-        #     tqdm.write(str(candidate))
-        #     tqdm.write(str(candidate.value(self.reqs.objective_substats)))
-        #     tqdm.write(str(self.reqs.objective.value(candidate)))
-        #     tqdm.write(str(self.reqs.objective.floor(candidate)))
+        if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
+            tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
+            tqdm.write(str(candidate))
+            tqdm.write(str(candidate.value(self.reqs.objective_substats)))
+            tqdm.write(str(self.reqs.objective.value(candidate)))
+            tqdm.write(str(self.reqs.objective.floor(candidate)))
         if self.solution is None:
             return candidate
         return max(self.solution, candidate, key=lambda x: self.reqs.objective.value(x))
@@ -87,7 +87,7 @@ class Optimizer:
     def _dfs(self, combo: List[Topping], idx):
         """Dfs combination generator, dfs so a benchmark solution is found as soon as possible"""
         if len(combo) == 1:
-            # tqdm.write(f"{idx} : {combo[0]} : {self._key(combo[0])}")
+            tqdm.write(f"{idx} : {combo[0]} : {self._key(combo[0])}")
             yield combo[0]
         if (reason := self._prune(combo, self.toppings[idx:])) != Prune.NONE:
             # tqdm.write(f"PRUNE : {[str(topping) for topping in combo]}")
@@ -180,9 +180,20 @@ class Optimizer:
                 mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
 
                 for _ in range(wildcard_count):
-                    combined = self._best_combined_all_case(combo, toppings, mutable_set_reqs)
-                    if combined is not None:
-                        if combined > 0:
+                    # combined = self._best_combined_all_case(combo, toppings, mutable_set_reqs)
+                    # if combined is not None:
+                    #     if combined > 0:
+                    #         all_value_met = True
+                    #         break
+
+                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.all_substats)
+                    if full_set is not None:
+                        combined = full_set.value(self.reqs.all_substats) - sum(
+                            self.reqs.floor(substat) for substat in self.reqs.valid_substats
+                        )
+                        if combined > 0 and self.reqs.objective.upper(
+                                combined, full_set, combo
+                        ) > self.reqs.objective.value(self.solution):
                             all_value_met = True
                             break
 
@@ -199,9 +210,18 @@ class Optimizer:
                 mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
 
                 for _ in range(wildcard_count):
-                    combined = self._best_combined_objective_case(combo, toppings, mutable_set_reqs)
-                    if combined is not None:
-                        if combined > 0:
+                    # combined = self._best_combined_objective_case(combo, toppings, mutable_set_reqs)
+                    # if combined is not None:
+                    #     if combined > 0:
+                    #         obj_value_met = True
+                    #         break
+
+                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.objective_substats)
+                    if full_set is not None:
+                        combined = full_set.value(self.reqs.objective_substats)
+                        if combined > 0 and self.reqs.objective.upper(
+                                combined, full_set, combo
+                        ) > self.reqs.objective.value(self.solution):
                             obj_value_met = True
                             break
 

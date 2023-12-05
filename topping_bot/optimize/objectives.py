@@ -127,15 +127,20 @@ class EDMG(Special):
 
         return self.e_dmg(atk, crit)
 
-    @cache
-    def upper(self, combined: Decimal):
+    def upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
         """Maximum E[DMG] possible given combined atk/crit pool"""
         combined = (combined + self.base_atk + self.base_crit) / Decimal("100")
 
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
-        optimal_crit = combined - optimal_atk
 
-        return self.e_dmg(optimal_atk, optimal_crit)
+        combo = ToppingSet(combo)
+        atk, crit = (combo.value(Type.ATK) + self.base_atk) / Decimal("100"), (combo.value(Type.CRIT) + self.base_crit) / Decimal("100")
+
+        ideal_possible_atk = max(atk, optimal_atk)
+        ideal_possible_crit = combined - ideal_possible_atk
+
+        return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
+
 
     @cache
     def floor(self, topping_set: ToppingSet):
