@@ -74,12 +74,12 @@ class Optimizer:
         )
 
     def _best_objective(self, candidate: ToppingSet):
-        if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
-            # tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
-            # tqdm.write(str(candidate))
-            # tqdm.write(str(candidate.value(self.reqs.objective_substats)))
-            # tqdm.write(str(self.reqs.objective.value(candidate)))
-            # tqdm.write(str(self.reqs.objective.floor(candidate)))
+        # if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
+        #     tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
+        #     tqdm.write(str(candidate))
+        #     tqdm.write(str(candidate.value(self.reqs.objective_substats)))
+        #     tqdm.write(str(self.reqs.objective.value(candidate)))
+        #     tqdm.write(str(self.reqs.objective.floor(candidate)))
         if self.solution is None:
             return candidate
         return max(self.solution, candidate, key=lambda x: self.reqs.objective.value(x))
