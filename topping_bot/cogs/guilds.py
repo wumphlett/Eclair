@@ -11,20 +11,9 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Cog
 
 from topping_bot.crk.guild import Guild
-from topping_bot.util.common import admin_only, approved_guild_only, guild_only, new_embed, send_msg, server_admin_only
+from topping_bot.util.common import admin_only, approved_guild_only, edit_msg, guild_only, new_embed, send_msg, server_admin_only
 from topping_bot.util.const import CONFIG, DEBUG, GUILD_PATH, STATIC_PATH
 from topping_bot.ui.common import AutoGuildSetup, Paginator
-
-
-"""
-TODO
-- register/setup for subscribed server
-  - requires err channel & actually using err channel
-  - add to servers.txt
-  - trigger server setup
-  - trigger daily auto-guilds
-- unsubscribe? what that looks like
-"""
 
 
 class Guilds(Cog, description="The guild commands available to you"):
@@ -215,7 +204,9 @@ class Guilds(Cog, description="The guild commands available to you"):
         try:
             mirrored_roles = [subscribed_server.get_role(role) for role in server_info["roles"].values()]
             await subscribed_server.edit_role_positions({role: index_role.position - 1 for role in mirrored_roles})
-        except:
+        except Exception as exc:
+            print(exc)
+            traceback.print_exc()
             with contextlib.suppress(Exception):
                 error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
                 await error_channel.send(
@@ -372,6 +363,14 @@ class Guilds(Cog, description="The guild commands available to you"):
             )
             return
 
+        msg = await send_msg(
+            ctx,
+            title="Unsubscribing From Auto-guilds",
+            description=[
+                "Please wait...",
+            ],
+        )
+
         Guild.subscribed_servers = [server for server in Guild.subscribed_servers if server != ctx.guild.id]
         Guild.dump_subscribed_servers()
 
@@ -383,9 +382,12 @@ class Guilds(Cog, description="The guild commands available to you"):
                 await role_to_delete.delete(reason="Unsubscribed from auto-guilds")
 
         server_fp.unlink(missing_ok=True)
+        # TODO delete index role, more specifically order created roles, and exactly where intended
+        # TODO prevent fail to reorder row from firing on initial create
+        # TODO fail to reorder still fires when roles aren't created
 
-        await send_msg(
-            ctx,
+        await edit_msg(
+            msg,
             title="Unsubscribed From Auto-guilds",
             description=[
                 "Your server has successfully unsubscribed to auto-guilds",
