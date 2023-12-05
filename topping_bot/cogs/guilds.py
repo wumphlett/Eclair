@@ -251,9 +251,8 @@ class Guilds(Cog, description="The guild commands available to you"):
         with open(server_fp, "w") as f:
             yaml.safe_dump(server_info, f, sort_keys=False)
 
-        await asyncio.sleep(2)  # let roles finish creation before moving
-
         async def reorder_roles():
+            await subscribed_server.fetch_roles()
             matched_roles = [subscribed_server.get_role(matched_role) for matched_role in server_info["roles"].values()]
             await subscribed_server.edit_role_positions(
                 {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(matched_roles)}
@@ -470,7 +469,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             msg,
             title="Unsubscribed From Auto-guilds",
             description=[
-                "Your server has successfully unsubscribed to auto-guilds",
+                "Your server has successfully unsubscribed from auto-guilds",
                 "To change this, use !guild subscribe",
             ],
         )
