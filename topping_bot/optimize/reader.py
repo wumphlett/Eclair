@@ -126,7 +126,7 @@ def extract_unique_frames(fp: Path):
     video = cv2.VideoCapture(str(fp))
 
     count = -1
-    last_frame = None
+    last_partial_frame = None
     success, frame = video.read()
     y, x, c = frame.shape
     while success:
@@ -137,15 +137,16 @@ def extract_unique_frames(fp: Path):
 
         # crop left half
         frame = frame[:, : x // 2]
+        partial_frame = frame[y // 2:-(y // 4)]
 
         # unique frame check
-        if last_frame is None:
-            new_y, new_x, new_c = frame.shape
+        if last_partial_frame is None:
+            new_y, new_x, new_c = partial_frame.shape
             threshold = new_y * new_x // 200
-            last_frame = frame
+            last_partial_frame = partial_frame
             yield frame
-        elif cv2.norm(last_frame, frame, cv2.NORM_L2) > threshold:
-            last_frame = frame
+        elif cv2.norm(last_partial_frame, partial_frame, cv2.NORM_L2) > threshold:
+            last_partial_frame = partial_frame
             yield frame
         success, frame = video.read()
 
