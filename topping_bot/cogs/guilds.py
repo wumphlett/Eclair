@@ -132,11 +132,11 @@ class Guilds(Cog, description="The guild commands available to you"):
 
                         async def add_roles():
                             subscribed_server = await self.bot.fetch_guild(server)
-                            member = await subscribed_server.fetch_member(after.id)
-                            await member.add_roles(
-                                subscribed_server.get_role(server_info["roles"][tracked_role.name]),
-                                reason=f"Now a member of {tracked_role.name}",
-                            )
+                            if (member := subscribed_server.get_member(after.id)) is not None:
+                                await member.add_roles(
+                                    subscribed_server.get_role(server_info["roles"][tracked_role.name]),
+                                    reason=f"Now a member of {tracked_role.name}",
+                                )
 
                         async def add_roles_error():
                             error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
@@ -154,11 +154,11 @@ class Guilds(Cog, description="The guild commands available to you"):
 
                         async def remove_roles():
                             subscribed_server = await self.bot.fetch_guild(server)
-                            member = await subscribed_server.fetch_member(after.id)
-                            await member.remove_roles(
-                                subscribed_server.get_role(server_info["roles"][tracked_role.name]),
-                                reason=f"No longer a member of {tracked_role.name}",
-                            )
+                            if (member := subscribed_server.get_member(after.id)) is not None:
+                                await member.remove_roles(
+                                    subscribed_server.get_role(server_info["roles"][tracked_role.name]),
+                                    reason=f"No longer a member of {tracked_role.name}",
+                                )
 
                         async def remove_roles_error():
                             error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
@@ -180,11 +180,11 @@ class Guilds(Cog, description="The guild commands available to you"):
 
                     async def remove_roles():
                         subscribed_server = await self.bot.fetch_guild(server)
-                        member = await subscribed_server.fetch_member(payload.user.id)
-                        await member.remove_roles(
-                            subscribed_server.get_role(server_info["roles"][tracked_role.name]),
-                            reason=f"No longer a member of {tracked_role.name}",
-                        )
+                        if (member := subscribed_server.get_member(payload.user.id)) is not None:
+                            await member.remove_roles(
+                                subscribed_server.get_role(server_info["roles"][tracked_role.name]),
+                                reason=f"No longer a member of {tracked_role.name}",
+                            )
 
                     async def remove_roles_error():
                         error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
@@ -307,7 +307,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             subscribed_server = self.bot.get_guild(server)
             server_info = Guild.load_subscribed_server_info(subscribed_server.id)
             await subscribed_server.chunk()
-            all_server_members = set([member async for member in subscribed_server.fetch_members()])
+            all_server_members = set([member for member in subscribed_server.members])
 
             for guild, members in tracked_members.items():
                 if guild.server == server:
@@ -318,7 +318,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                 for add_member in members.difference(mirrored_members).intersection(all_server_members):
 
                     async def add_roles():
-                        member = await subscribed_server.fetch_member(add_member.id)
+                        member = subscribed_server.get_member(add_member.id)
                         await member.add_roles(
                             subscribed_server.get_role(mirrored_roles[guild.name]),
                             reason=f"Now a member of {guild.name}",
@@ -338,7 +338,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                 for remove_member in mirrored_members.difference(members).intersection(all_server_members):
 
                     async def remove_roles():
-                        member = await subscribed_server.fetch_member(remove_member.id)
+                        member = subscribed_server.get_member(remove_member.id)
                         await member.remove_roles(
                             subscribed_server.get_role(mirrored_roles[guild.name]),
                             reason=f"No longer a member of {guild.name}",
