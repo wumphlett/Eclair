@@ -54,6 +54,7 @@ ORDERING = {
         "inv",
         "inv add",
         "inv delete",
+        "inv deletetopping",
         "updateinv",
         "appendinv",
         "count",

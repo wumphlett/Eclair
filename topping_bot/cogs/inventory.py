@@ -22,8 +22,8 @@ from topping_bot.util.const import CONFIG, DATA_PATH, DEBUG_PATH, TMP_PATH
 from topping_bot.util.cpu import full_extraction
 from topping_bot.util.image import toppings_to_images
 from topping_bot.util.parallel import RUNNING_CPU_TASK, SEMAPHORE
-from topping_bot.ui.common import Paginator
-
+from topping_bot.util.converters import IndicesConverter
+from topping_bot.ui.common import Paginator, RemoveToppingsMenu
 
 class Inventory(Cog, description="View and update your topping inventory"):
     def __init__(self, bot):
@@ -95,7 +95,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
             msgs = []
             embed_images = []
 
-            images = toppings_to_images(toppings, ctx.message.author.id)
+            images = toppings_to_images(toppings, ctx.message.author.id, show_index=True)
 
             for subset in (images[i : i + 10] for i in range(0, len(images), 10)):
                 msg = await channel.send(files=[discord.File(image, filename=image.name) for image in subset])
@@ -293,6 +293,91 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 "Use !tutorial to learn more",
             ],
         )
+
+
+    @inv.command(aliases=["delt"], brief="Delete topping", description="Delete topping(s) from inventory by index")
+    async def deletetopping(self, ctx, indices=parameter(description="indices of toppings in inventory separated by space (up to 25 toppings)", default=[], converter=IndicesConverter[int])):    
+        if not 1 <= len(indices) <= 25:
+            await send_msg(
+                ctx,
+                title="Err: Unexpected Number of Toppings",
+                description=[
+                    "You have specified # of toppings outside of the expected range.",
+                    "Please only include between 1 to 25 toppings.",
+                    "",
+                    "Use !help inv deletetopping to learn more."
+                ],
+            )
+            return
+
+        fp = DATA_PATH / f"{ctx.message.author.id}.csv"
+
+        if not fp.exists():
+            await send_msg(
+                ctx,
+                title="Err: No Topping Inventory",
+                description=[
+                    "You have not submitted a topping video.",
+                    "Please use !updateinv <video> to update your inventory.",
+                    "Use !tutorial to learn more.",
+                ],
+            )
+            return
+
+        toppings = read_toppings(fp)
+
+        if not toppings:
+            await send_msg(
+                ctx,
+                title="Err: No Topping Inventory",
+                description=[
+                    "Your toppings on file are empty.",
+                    "Please use !updateinv <video> to update your inventory.",
+                    "Use !tutorial to learn more.",
+                ],
+            )
+            return
+    
+        invalid_indices = list(filter(lambda i: not 0 <= i <= len(toppings) - 1, indices))
+
+        if invalid_indices:
+            await send_msg(
+                ctx,
+                title="Err: Index Out of Range",
+                description=[
+                    "At least one of the specified toppings is outside the expected range.",
+                    "Please check that you provided valid indices.",
+                    "",
+                    f"The invalid indices: {', '.join(str(i) for i in invalid_indices)}.",
+                    "",
+                    "Use !help inv deletetopping to learn more."
+                ],
+            )
+            return
+    
+        toppings_to_remove =  [row for index, row in enumerate(toppings) if index in indices]
+        remaining_toppings = [row for index, row in enumerate(toppings) if index not in indices]
+
+        # generate preview image
+        channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
+        image = toppings_to_images(toppings_to_remove, ctx.message.author, show_index=False)[0]
+        temp_msg = await channel.send(file=discord.File(image, filename=image.name))
+        embed_image = [attachment.url for attachment in temp_msg.attachments][0]
+
+        embed_options = {
+            "title": "Delete Individual Toppings",
+            "description": "Would you like to remove these toppings from your inventory?",
+            "image": embed_image,
+            "thumbnail": False
+        }
+        inner_embed_options = {
+            "title": "CONFIRM REMOVE TOPPINGS",
+            "description":  "ARE YOU SURE YOU WANT TO REMOVE THESE TOPPINGS FROM YOUR INVENTORY?",
+            "image": embed_image,
+            "thumbnail": False
+        }
+
+        await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_options=embed_options, inner_embed_options=inner_embed_options)
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
     async def debug(self, ctx, video_id, verbose=False):
