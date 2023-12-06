@@ -364,7 +364,20 @@ class Inventory(Cog, description="View and update your topping inventory"):
         temp_msg = await channel.send(file=discord.File(image, filename=image.name))
         embed_image = [attachment.url for attachment in temp_msg.attachments][0]
 
-        await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_image=embed_image)
+        embed_options = {
+            "title": "Delete Individual Toppings",
+            "description": "Would you like to remove these toppings from your inventory?",
+            "image": embed_image,
+            "thumbnail": False
+        }
+        inner_embed_options = {
+            "title": "CONFIRM REMOVE TOPPINGS",
+            "description":  "ARE YOU SURE YOU WANT TO REMOVE THESE TOPPINGS FROM YOUR INVENTORY?",
+            "image": embed_image,
+            "thumbnail": False
+        }
+
+        await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_options=embed_options, inner_embed_options=inner_embed_options)
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
     async def debug(self, ctx, video_id, verbose=False):

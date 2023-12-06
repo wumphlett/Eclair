@@ -161,7 +161,7 @@ class RemoveToppingsMenu(View):
         super().__init__(timeout=timeout)
         self.inner = inner
 
-    async def start(self, ctx, member, toppings: List[Topping], fp: Path, embed_image=None):
+    async def start(self, ctx, member, toppings: List[Topping], fp: Path, embed_options, inner_embed_options):
         if isinstance(ctx, discord.Interaction):
             ctx = await commands.Context.from_interaction(ctx)
 
@@ -170,7 +170,9 @@ class RemoveToppingsMenu(View):
 
         self.toppings = toppings
         self.fp = fp
-        self.embed_image = embed_image
+
+        self.embed_options = embed_options
+        self.inner_embed_options = inner_embed_options
 
         self.yes_button = Button(label="Remove", style=ButtonStyle.danger)
         self.yes_button.callback = self.yes_button_callback
@@ -180,26 +182,8 @@ class RemoveToppingsMenu(View):
         self.add_item(self.no_button)
         self.add_item(self.yes_button)
 
-        if self.inner:
-            title = "CONFIRM REMOVE TOPPINGS"
-            desc = "ARE YOU SURE YOU WANT TO REMOVE THE USED TOPPINGS FROM YOUR INVENTORY?"
-        else:
-            title = "Remove Toppings?"
-            desc = "Would you like to remove the used toppings from your inventory?"
-
-        embed_params = {
-            "title": title,
-            "description": desc, 
-        }
-
-        if self.embed_image:
-            embed_params.update({
-                "image": self.embed_image,
-                "thumbnail": False
-            })
-
         self.message = await ctx.reply(
-            embed=await new_embed(**embed_params),
+            embed=await new_embed(**(inner_embed_options if self.inner else embed_options)),
             ephemeral=True,
             view=self,
         )
@@ -209,7 +193,7 @@ class RemoveToppingsMenu(View):
             self.stop()
             await self.cleanup()
             await RemoveToppingsMenu(timeout=self.timeout, inner=True).start(
-                self.ctx, self.member, toppings=self.toppings, fp=self.fp, embed_image=self.embed_image
+                self.ctx, self.member, toppings=self.toppings, fp=self.fp, embed_options=self.embed_options, inner_embed_options=self.inner_embed_options
             )
         if self.inner:
             write_toppings(self.toppings, self.fp)

@@ -289,7 +289,17 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     json.dump(data, f, indent=4)
 
         cookie_img.unlink(missing_ok=True)
-        await RemoveToppingsMenu(timeout=600).start(ctx, user, toppings=optimizer.inventory, fp=topping_fp)
+
+        embed_options = {
+            "title": "Remove Used Toppings?",
+            "description": "Would you like to remove the used toppings from your inventory?"
+        }
+        inner_embed_options = {
+            "title": "CONFIRM REMOVE USED TOPPINGS",
+            "description":  "ARE YOU SURE YOU WANT TO REMOVE THE USED TOPPINGS FROM YOUR INVENTORY?"
+        }
+
+        await RemoveToppingsMenu(timeout=600).start(ctx, user, toppings=optimizer.inventory, fp=topping_fp, embed_options=embed_options, inner_embed_options=inner_embed_options)
 
     @commands.command(brief="Stop", description="Stop a running optimization")
     async def stop(self, ctx):
