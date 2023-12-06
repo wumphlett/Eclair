@@ -111,7 +111,15 @@ hollyberry:
     icon: 10
     rank: 16
     optimizer: True
-  # YaeBaalRirin
+  - name: YaeBaalRirin
+    server: 977230829589774337
+    role: 978809002991439932
+    channels:
+      - 1181952087525965855
+    emoji: 🌸
+    icon: 13
+    rank: 17
+    optimizer: True
   - name: PeachTea
     server: 891943428424888391
     role: 893758065382404136
