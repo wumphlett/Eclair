@@ -29,7 +29,7 @@ async def entrap_errors(throwable_function: Callable, on_error_function: Callabl
     try:
         await throwable_function()
     except:
-        traceback.print_exc()
+        # traceback.print_exc()
         with contextlib.suppress(Exception):
             await on_error_function()
 
@@ -254,9 +254,8 @@ class Guilds(Cog, description="The guild commands available to you"):
         async def reorder_roles():
             await subscribed_server.fetch_roles()
             matched_roles = [subscribed_server.get_role(matched_role) for matched_role in server_info["roles"].values()]
-            print(matched_roles)
             await subscribed_server.edit_role_positions(
-                {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(matched_roles)}
+                {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(matched_roles) if matched_roles is not None}
             )
 
         async def reorder_roles_error():
