@@ -295,7 +295,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
         )
 
 
-    @inv.command(aliases=["dt"], brief="Delete topping", description="Delete topping(s) from inventory by index")
+    @inv.command(aliases=["delt"], brief="Delete topping", description="Delete topping(s) from inventory by index")
     async def deletetopping(self, ctx, indices=parameter(description="indices of toppings in inventory separated by space (up to 25 toppings)", default=[], converter=IndicesConverter[int])):    
         if not 1 <= len(indices) <= 25:
             await send_msg(
@@ -305,8 +305,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "You have specified # of toppings outside of the expected range.",
                     "Please only include between 1 to 25 toppings.",
                     "",
-                    "E.g. to delete first 3 toppings in inventory:",
-                    "!inv deletetopping 0 1 2",
+                    "Use !help inv deletetopping to learn more."
                 ],
             )
             return
@@ -349,8 +348,9 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "At least one of the specified toppings is outside the expected range.",
                     "Please check that you provided valid indices.",
                     "",
-                    "E.g. to delete first 3 toppings in inventory:",
-                    "!inv deletetopping 0 1 2",
+                    f"The invalid indices: {', '.join(str(i) for i in invalid_indices)}.",
+                    "",
+                    "Use !help inv deletetopping to learn more."
                 ],
             )
             return
