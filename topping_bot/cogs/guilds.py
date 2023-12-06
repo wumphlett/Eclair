@@ -328,6 +328,8 @@ class Guilds(Cog, description="The guild commands available to you"):
                 if guild.server == server:
                     continue
 
+                if subscribed_server.get_role(mirrored_roles[guild.name]) is None:
+                    continue
                 mirrored_members = set(subscribed_server.get_role(mirrored_roles[guild.name]).members)
 
                 for add_member in members.difference(mirrored_members).intersection(all_server_members):
