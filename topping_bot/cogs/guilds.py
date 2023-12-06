@@ -261,9 +261,17 @@ class Guilds(Cog, description="The guild commands available to you"):
                     and subscribed_server.get_role(server_info["roles"][guild.name])
                 ):
                     role_order.append(subscribed_server.get_role(server_info["roles"][guild.name]))
-            await subscribed_server.edit_role_positions(
-                {matched_role: index_role.position  - 1 for i, matched_role in enumerate(role_order)}
-            )
+            role_positions = {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
+            idx = index_role.position - len(role_positions) - 1
+            for existing_role in subscribed_server.roles[:subscribed_server.roles.index(index_role)][::-1]:
+                if existing_role not in role_positions:
+                    role_positions[existing_role] = idx
+                    idx -= 1
+            offset = min(role_positions.values())
+            if offset < 0:
+                for k, v in role_positions:
+                    role_positions[k] = v * -offset
+            await subscribed_server.edit_role_positions(role_positions)
 
         async def reorder_roles_error():
             error_channel = await self.bot.fetch_channel(server_info["utility"]["error-msgs"])
