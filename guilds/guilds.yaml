@@ -10,8 +10,10 @@ pure-vanilla:
     emoji: 🥉
     icon: null
     rank: null
-    optimizer: False
+    optimizer: True
 hollyberry:
+  # KAMAZON
+  # RSF
   - name: Creamery
     server: 1093123534483640433
     role: 1093134793417429094
@@ -24,15 +26,17 @@ hollyberry:
     icon: 18
     rank: 3
     optimizer: True
-  - name: Aeternus
-    server: 917936725693698088
-    role: 917941400912429076
+  # LAMAZON
+  # Matcha
+  - name: GachaTorture
+    server: 891943428424888391
+    role: 892660414129795123
     channels:
-      - 1096632025286447134
-    emoji: 💮
-    icon: 2
+      - 1096008568769105981
+    emoji: ☕
+    icon: 10
     rank: 6
-    optimizer: False
+    optimizer: True
   - name: Gnomads
     server: 1092219200585596928
     role: 1093316803339501598
@@ -42,14 +46,45 @@ hollyberry:
     icon: 19
     rank: 7
     optimizer: True
-  - name: GachaTorture
-    server: 891943428424888391
-    role: 892660414129795123
+  # GALAXY
+  # LUMINOUS
+  # 꾸몽
+  - name: WISTERIA
+    server: 971445374059425872
+    role: 971447254802116628
     channels:
-      - 1096008568769105981
-    emoji: ☕
-    icon: 10
-    rank: 10
+      - 1181907686988714044
+    emoji: 🌼
+    icon: 2
+    rank: 11
+    optimizer: True
+  # RICE
+  - name: ChromaticHaze
+    server: 1106150108015366205
+    role: 1106158072658923550
+    channels:
+      - 1118578792135413780
+    emoji: 🌈
+    icon: 20
+    rank: 13
+    optimizer: True
+  - name: BadBatchOCookies
+    server: 910556057305235466
+    role: 974790857930706995
+    channels:
+      - 1097150485041004654
+    emoji: 🍪
+    icon: 13
+    rank: 14
+    optimizer: True
+  - name: FallOnion
+    server: 939237991195488347
+    role: 1034049459186831410
+    channels:
+      - 1111282248726098012
+    emoji: 🧅
+    icon: 2
+    rank: 15
     optimizer: True
   - name: SylvanaKookies
     server: 907234530467934208
@@ -59,59 +94,8 @@ hollyberry:
     emoji: 💗
     icon: 10
     rank: 16
-    optimizer: False
-  - name: Overdoughs
-    server: 891943428424888391
-    role: 892702781373317160
-    channels:
-      - 1096048170057879562
-    emoji: 🍄
-    icon: 13
-    rank: 19
-    optimizer: False
-  - name: BadBatchOCookies
-    server: 910556057305235466
-    role: 974790857930706995
-    channels:
-      - 1097150485041004654
-    emoji: 🍪
-    icon: 13
-    rank: 21
-    optimizer: False
-  - name: FallOnion
-    server: 939237991195488347
-    role: 1034049459186831410
-    channels:
-      - 1111282248726098012
-    emoji: 🧅
-    icon: 2
-    rank: 22
-    optimizer: False
-  - name: Mage
-    server: 1016487455156879430
-    role: 1016496625998385202
-    channels:
-      - 1105608134510252095
-    emoji: 🧙
-    icon: 15
-    rank: 24
     optimizer: True
-  - name: WISTERIA
-    server: 971445374059425872
-    role: 971447254802116628
-    emoji: 🌼
-    icon: 2
-    rank: 25
-    optimizer: False
-  - name: CrumblingIdiots
-    server: 891943428424888391
-    role: 916568876593086464
-    channels:
-      - 1096047463405715568
-    emoji: 🍪
-    icon: 15
-    rank: 26
-    optimizer: False
+  # YaeBaalRirin
   - name: PeachTea
     server: 891943428424888391
     role: 893758065382404136
@@ -119,33 +103,60 @@ hollyberry:
       - 1096046274245050480
     emoji: 🍑
     icon: 2
-    rank: 27
-    optimizer: False
+    rank: 18
+    optimizer: True
+  - name: SpringOnion
+    server: 939237991195488347
+    role: 939239069450375228
+    channels:
+      - 1181908868478017666
+    emoji: 🧅
+    icon: 2
+    rank: 19
+    optimizer: True
+  - name: BurntOnion
+    server: 939237991195488347
+    role: 943311462187798528
+    channels:
+      - 1181908899339698249
+    emoji: 🧅
+    icon: 2
+    rank: 20
+    optimizer: True
+  - name: RoyalOnion
+    server: 939237991195488347
+    role: 966565596969971762
+    channels:
+      - 1181908935201001502
+    emoji: 🧅
+    icon: 2
+    rank: 21
+    optimizer: True
+  # 스노우파크
+  - name: Overdoughs
+    server: 891943428424888391
+    role: 892702781373317160
+    channels:
+      - 1096048170057879562
+    emoji: 🍄
+    icon: 13
+    rank: 23
+    optimizer: True
+  # 星の白金
+  # S7AR
+  # ChrismasEve
   - name: BeelzeJelly
     server: 899457533926842408
     role: 899822449976291378
+    channels:
+      - 1181908108583374879
     emoji: 🥷
     icon: 8
-    rank: 28
-    optimizer: False
-  - name: SSTsunami
-    server: 1050081324448362569
-    role: 1050085858000244836
-    channels:
-      - 1111282408717828156
-    emoji: 🌊
-    icon: 8
-    rank: 29
-    optimizer: False
-  - name: ChromaticHaze
-    server: 1106150108015366205
-    role: 1106158072658923550
-    channels:
-      - 1118578792135413780
-    emoji: 🌈
-    icon: 20
-    rank: 30
-    optimizer: False
+    rank: 27
+    optimizer: True
+  # XứSớNgứLoz
+  # ???
+  # CookiesCaffe
 dark-cacao:
   - name: Miso
     server: 891943428424888391
@@ -155,7 +166,7 @@ dark-cacao:
     emoji: 🥣
     icon: null
     rank: 1
-    optimizer: False
+    optimizer: True
   - name: Nigiri
     server: 891943428424888391
     role: 1052757600288112651
@@ -164,7 +175,7 @@ dark-cacao:
     emoji: 🍣
     icon: null
     rank: 2
-    optimizer: False
+    optimizer: True
   - name: TimeRift
     server: 992691459427934260
     role: 992697536211066970
@@ -173,7 +184,7 @@ dark-cacao:
     emoji: ⏰
     icon: null
     rank: 3
-    optimizer: False
+    optimizer: True
   - name: Wagyu
     server: 891943428424888391
     role: 965724837601497159
@@ -182,7 +193,7 @@ dark-cacao:
     emoji: 🐮
     icon: null
     rank: 4
-    optimizer: False
+    optimizer: True
 arena: []
 special:
   - name: Optimizers
