@@ -13,7 +13,7 @@ pure-vanilla:
     optimizer: True
 hollyberry:
   # KAMAZON
-  # RSF
+  # RSF (KakaoTalk)
   - name: Creamery
     server: 1093123534483640433
     role: 1093134793417429094
@@ -47,7 +47,15 @@ hollyberry:
     rank: 7
     optimizer: True
   # GALAXY
-  # LUMINOUS
+  - name: LUMINOUS
+    server: 1095412746117464124
+    role: 1095547497402867762
+    channels:
+      - 1181942905431134270
+    emoji: 🌕
+    icon: 11
+    rank: 9
+    optimizer: True
   # 꾸몽
   - name: WISTERIA
     server: 971445374059425872
@@ -58,7 +66,15 @@ hollyberry:
     icon: 2
     rank: 11
     optimizer: True
-  # RICE
+  - name: RICE
+    server: 1109341546224042085
+    role: 1109346307774095441
+    channels:
+      - 1181943907739766896
+    emoji: 🍙
+    icon: 13
+    rank: 12
+    optimizer: True
   - name: ChromaticHaze
     server: 1106150108015366205
     role: 1106158072658923550
@@ -152,11 +168,12 @@ hollyberry:
       - 1181908108583374879
     emoji: 🥷
     icon: 8
+
     rank: 27
     optimizer: True
   # XứSớNgứLoz
-  # ???
-  # CookiesCaffe
+  # 西紅柿炒好蛋
+  # CookiesCaffe彩
 dark-cacao:
   - name: Miso
     server: 891943428424888391
