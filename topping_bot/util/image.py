@@ -186,8 +186,7 @@ def toppings_to_images(toppings: List[Topping], user_id):
         images.append(fp)
     return images
 
-
-def topping_set_to_image(topping_set: ToppingSet, user_id):
+def topping_set_to_image(topping_set: ToppingSet, user_id, name: str=None):
     fp = TMP_PATH / f"{user_id}.png"
 
     image = Image.new("RGBA", (1080, 1080), "rgb(3, 5, 9)")
@@ -328,6 +327,13 @@ def topping_set_to_image(topping_set: ToppingSet, user_id):
             stroke_width=2,
             anchor="ma",
         )
+
+    if name:
+        cookie = Cookie.get(name)
+        
+    if cookie:
+        card = Image.open(cookie.card).resize((125, 125))
+        image.paste(card, (25, 25))
 
     image.save(fp)
     return fp
