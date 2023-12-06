@@ -271,6 +271,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             if offset < 0:
                 for k, v in role_positions:
                     role_positions[k] = v * -offset
+            print(role_positions)
             await subscribed_server.edit_role_positions(role_positions)
 
         async def reorder_roles_error():
