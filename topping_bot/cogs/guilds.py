@@ -262,7 +262,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                 ):
                     role_order.append(subscribed_server.get_role(server_info["roles"][guild.name]))
             await subscribed_server.edit_role_positions(
-                {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
+                {matched_role: index_role.position  - 1 for i, matched_role in enumerate(role_order)}
             )
 
         async def reorder_roles_error():
