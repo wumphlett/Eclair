@@ -97,7 +97,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             images = toppings_to_images(toppings, ctx.message.author.id)
 
-            for subset in (images[i: i + 10] for i in range(0, len(images), 10)):
+            for subset in (images[i : i + 10] for i in range(0, len(images), 10)):
                 msg = await channel.send(files=[discord.File(image, filename=image.name) for image in subset])
                 embed_images.extend([attachment.url for attachment in msg.attachments])
                 msgs.append(msg)
@@ -158,9 +158,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
         RUNNING_CPU_TASK[ctx.message.author.id] = None
         async with SEMAPHORE:
-            tqdm.write(
-                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began !inv add"
-            )
+            tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began !inv add")
             if msg is None:
                 msg = await send_msg(ctx, title="Uploading Toppings...", description=["Please wait"])
             else:
@@ -184,7 +182,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
             for idx, attachment in enumerate(ctx.message.attachments):
                 await attachment.save(fp)
 
-                solution = Value('i', -1)
+                solution = Value("i", -1)
                 shared_memory = SharedMemory(create=True, size=64)
                 process = Process(target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution))
                 RUNNING_CPU_TASK[ctx.message.author.id] = process
@@ -238,12 +236,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
         await edit_msg(
             msg,
             title=f"Uploading Toppings Complete",
-            description=[
-                "Finished.",
-                "",
-                f"Thank you for your patience!",
-                "Use !inv to view your inventory!"
-            ],
+            description=["Finished.", "", f"Thank you for your patience!", "Use !inv to view your inventory!"],
         )
 
         fp.unlink(missing_ok=True)
@@ -286,7 +279,10 @@ class Inventory(Cog, description="View and update your topping inventory"):
         )
 
     @commands.command(
-        checks=[guild_only], aliases=["uploadinv"], brief="DEPRECATED", description="DEPRECATED | Use !inv delete & !inv add"
+        checks=[guild_only],
+        aliases=["uploadinv"],
+        brief="DEPRECATED",
+        description="DEPRECATED | Use !inv delete & !inv add",
     )
     async def updateinv(self, ctx):
         await send_msg(
@@ -326,9 +322,11 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             topping_fp = DATA_PATH / f"{video_id}.csv"
 
-            solution = Value('i', -1)
+            solution = Value("i", -1)
             shared_memory = SharedMemory(create=True, size=64)
-            process = Process(target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution, True, verbose))
+            process = Process(
+                target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution, True, verbose)
+            )
             while process.is_alive():
                 await edit_msg(
                     msg,

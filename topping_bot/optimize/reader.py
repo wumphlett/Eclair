@@ -137,7 +137,7 @@ def extract_unique_frames(fp: Path):
 
         # crop left half
         frame = frame[:, : x // 2]
-        partial_frame = frame[y // 2:-(y // 4)]
+        partial_frame = frame[y // 2 : -(y // 4)]
 
         # unique frame check
         if last_partial_frame is None:

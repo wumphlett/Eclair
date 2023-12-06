@@ -173,7 +173,6 @@ class Optimizer:
         failures = Prune.NONE
         if self.solution and len(combo) != 5:
             if self.reqs.objective.type == Type.E_DMG:
-
                 mutable_set_reqs = overall_set_requirements.copy()
                 mutable_set_reqs.pop(self.reqs.objective_substats, 0)
 
@@ -195,7 +194,7 @@ class Optimizer:
                             self.reqs.floor(substat) for substat in self.reqs.valid_substats
                         )
                         if combined > 0 and self.reqs.objective.upper(
-                                combined, full_set, combo
+                            combined, full_set, combo
                         ) > self.reqs.objective.value(self.solution):
                             all_value_met = True
                             break
@@ -223,7 +222,7 @@ class Optimizer:
                     if full_set is not None:
                         combined = full_set.value(self.reqs.objective_substats)
                         if combined > 0 and self.reqs.objective.upper(
-                                combined, full_set, combo
+                            combined, full_set, combo
                         ) > self.reqs.objective.value(self.solution):
                             obj_value_met = True
                             break
@@ -235,7 +234,6 @@ class Optimizer:
                     failures |= Prune.COMBINED_OBJECTIVE_FAILURE
 
             elif self.reqs.objective.type == Type.VITALITY:
-
                 mutable_set_reqs = overall_set_requirements.copy()
                 mutable_set_reqs.pop(self.reqs.objective_substats, 0)
 

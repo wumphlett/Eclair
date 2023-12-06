@@ -177,13 +177,11 @@ class Requirements:
         cookie_names = set()
 
         for cookie in requirements["cookies"]:
-
             cookie_mods = mods.copy()
             valid_reqs, objective = [], None
 
             for requirement in cookie["requirements"]:
                 if type(requirement) == str:
-
                     valid = None
                     for parser in (Normal, Range, Equality, Relative):
                         result = parser.parse(requirement)
