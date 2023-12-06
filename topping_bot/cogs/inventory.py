@@ -338,7 +338,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
             return
-        
+    
         invalid_indices = list(filter(lambda i: not 0 <= i <= len(toppings) - 1, indices))
 
         if invalid_indices:
@@ -354,43 +354,17 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
             return
+    
+        toppings_to_remove =  [row for index, row in enumerate(toppings) if index in indices]
+        remaining_toppings = [row for index, row in enumerate(toppings) if index not in indices]
 
-        msg = None
-        if SEMAPHORE.locked():
-            tqdm.write(
-                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} queued !deletetopping"
-            )
-            msg = await send_msg(
-                ctx,
-                title="Delete Toppings Queued",
-                description=[
-                    f"Your request to !deletetopping has been queued",
-                    "",
-                    "This will start automatically when ready",
-                ],
-            )
+        # generate preview image
+        channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
+        image = toppings_to_images(toppings_to_remove, ctx.message.author, show_index=False)[0]
+        temp_msg = await channel.send(file=discord.File(image, filename=image.name))
+        embed_image = [attachment.url for attachment in temp_msg.attachments][0]
 
-        RUNNING_CPU_TASK[ctx.message.author.id] = None
-        async with SEMAPHORE:
-            tqdm.write(
-                f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {ctx.message.author} began !deletetopping"
-            )
-            if msg is None:
-                msg = await send_msg(ctx, title="Deleting toppings...", description=["Please wait"])
-            else:
-                await edit_msg(msg, title="Deleting toppings...", description=["Please wait"])
-            
-            toppings_to_remove =  [row for index, row in enumerate(toppings) if index in indices]
-            remaining_toppings = [row for index, row in enumerate(toppings) if index not in indices]
-
-            # generate preview image
-            channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
-            image = toppings_to_images(toppings_to_remove, ctx.message.author, show_index=False)[0]
-            temp_msg = await channel.send(file=discord.File(image, filename=image.name))
-            embed_image = [attachment.url for attachment in temp_msg.attachments][0]
-
-            await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_image=embed_image)
-        RUNNING_CPU_TASK.pop(ctx.message.author.id)
+        await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_image=embed_image)
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
     async def debug(self, ctx, video_id, verbose=False):
