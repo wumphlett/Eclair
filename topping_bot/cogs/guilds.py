@@ -253,9 +253,16 @@ class Guilds(Cog, description="The guild commands available to you"):
 
         async def reorder_roles():
             await subscribed_server.fetch_roles()
-            matched_roles = [subscribed_server.get_role(matched_role) for matched_role in server_info["roles"].values()]
+            role_order = []
+            for guild in Guild.supported:
+                if (
+                    not guild.is_special
+                    and server_info["roles"].get(guild.name)
+                    and subscribed_server.get_role(server_info["roles"][guild.name])
+                ):
+                    role_order.append(subscribed_server.get_role(server_info["roles"][guild.name]))
             await subscribed_server.edit_role_positions(
-                {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(matched_roles) if matched_roles is not None}
+                {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
             )
 
         async def reorder_roles_error():
