@@ -252,7 +252,6 @@ class Guilds(Cog, description="The guild commands available to you"):
             yaml.safe_dump(server_info, f, sort_keys=False)
 
         async def reorder_roles():
-            await subscribed_server.fetch_roles()
             role_order = []
             for guild in Guild.supported:
                 if (
@@ -278,7 +277,11 @@ class Guilds(Cog, description="The guild commands available to you"):
             await error_channel.send(
                 embed=await new_embed(
                     title="Err: Move Roles",
-                    description=f"Could not move managed roles below '== ECLAIR MANAGED BELOW =='",
+                    description=[
+                        "Could not move managed roles below '== ECLAIR MANAGED BELOW =='",
+                        "",
+                        "Please ensure Eclair's highest role is above '== ECLAIR MANAGED BELOW =='"
+                    ],
                 )
             )
 
