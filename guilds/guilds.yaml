@@ -183,12 +183,12 @@ hollyberry:
   # 西紅柿炒好蛋
   # CookiesCaffe彩
 dark-cacao:
-  - name: Miso
+  - name: Spearmint
     server: 891943428424888391
     role: 1016432441013059635
     channels:
       - 1105608134510252095
-    emoji: 🥣
+    emoji: 🌿
     icon: null
     rank: 1
     optimizer: True

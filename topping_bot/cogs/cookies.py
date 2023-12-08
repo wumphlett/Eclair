@@ -70,6 +70,17 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             return
 
         options = await filter_requirements_files(ctx, override_user=target)
+        if len(options) == 0:
+            await send_msg(
+                ctx,
+                title="Err: No Requirements Files",
+                description=[
+                    "You have uploaded a requirement file",
+                    "Please use !req upload <attch file> to specify a team to optimize",
+                    "Use !req help to learn more",
+                ],
+            )
+            return
 
         user = target if target else ctx.message.author
 
