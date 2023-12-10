@@ -262,7 +262,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                     role_order.append(subscribed_server.get_role(server_info["roles"][guild.name]))
             role_positions = {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
             idx = index_role.position - len(role_positions) - 1
-            for existing_role in subscribed_server.roles[:subscribed_server.roles.index(index_role)][::-1]:
+            for existing_role in subscribed_server.roles[: subscribed_server.roles.index(index_role)][::-1]:
                 if existing_role not in role_positions:
                     role_positions[existing_role] = idx
                     idx -= 1
@@ -280,7 +280,7 @@ class Guilds(Cog, description="The guild commands available to you"):
                     description=[
                         "Could not move managed roles below '== ECLAIR MANAGED BELOW =='",
                         "",
-                        "Please ensure Eclair's highest role is above '== ECLAIR MANAGED BELOW =='"
+                        "Please ensure Eclair's highest role is above '== ECLAIR MANAGED BELOW =='",
                     ],
                 )
             )

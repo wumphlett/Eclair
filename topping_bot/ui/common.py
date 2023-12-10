@@ -193,7 +193,12 @@ class RemoveToppingsMenu(View):
             self.stop()
             await self.cleanup()
             await RemoveToppingsMenu(timeout=self.timeout, inner=True).start(
-                self.ctx, self.member, toppings=self.toppings, fp=self.fp, embed_options=self.embed_options, inner_embed_options=self.inner_embed_options
+                self.ctx,
+                self.member,
+                toppings=self.toppings,
+                fp=self.fp,
+                embed_options=self.embed_options,
+                inner_embed_options=self.inner_embed_options,
             )
         if self.inner:
             write_toppings(self.toppings, self.fp)

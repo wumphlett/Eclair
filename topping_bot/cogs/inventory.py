@@ -25,6 +25,7 @@ from topping_bot.util.parallel import RUNNING_CPU_TASK, SEMAPHORE
 from topping_bot.util.converters import IndicesConverter
 from topping_bot.ui.common import Paginator, RemoveToppingsMenu
 
+
 class Inventory(Cog, description="View and update your topping inventory"):
     def __init__(self, bot):
         self.bot = bot
@@ -294,9 +295,16 @@ class Inventory(Cog, description="View and update your topping inventory"):
             ],
         )
 
-
     @inv.command(aliases=["delt"], brief="Delete topping", description="Delete topping(s) from inventory by index")
-    async def deletetopping(self, ctx, indices=parameter(description="indices of toppings in inventory separated by space (up to 25 toppings)", default=[], converter=IndicesConverter[int])):    
+    async def deletetopping(
+        self,
+        ctx,
+        indices=parameter(
+            description="indices of toppings in inventory separated by space (up to 25 toppings)",
+            default=[],
+            converter=IndicesConverter[int],
+        ),
+    ):
         if not 1 <= len(indices) <= 25:
             await send_msg(
                 ctx,
@@ -305,7 +313,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "You have specified # of toppings outside of the expected range.",
                     "Please only include between 1 to 25 toppings.",
                     "",
-                    "Use !help inv deletetopping to learn more."
+                    "Use !help inv deletetopping to learn more.",
                 ],
             )
             return
@@ -337,7 +345,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
             return
-    
+
         invalid_indices = list(filter(lambda i: not 0 <= i <= len(toppings) - 1, indices))
 
         if invalid_indices:
@@ -350,12 +358,12 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "",
                     f"The invalid indices: {', '.join(str(i) for i in invalid_indices)}.",
                     "",
-                    "Use !help inv deletetopping to learn more."
+                    "Use !help inv deletetopping to learn more.",
                 ],
             )
             return
-    
-        toppings_to_remove =  [row for index, row in enumerate(toppings) if index in indices]
+
+        toppings_to_remove = [row for index, row in enumerate(toppings) if index in indices]
         remaining_toppings = [row for index, row in enumerate(toppings) if index not in indices]
 
         # generate preview image
@@ -368,16 +376,23 @@ class Inventory(Cog, description="View and update your topping inventory"):
             "title": "Delete Individual Toppings",
             "description": "Would you like to remove these toppings from your inventory?",
             "image": embed_image,
-            "thumbnail": False
+            "thumbnail": False,
         }
         inner_embed_options = {
             "title": "CONFIRM REMOVE TOPPINGS",
-            "description":  "ARE YOU SURE YOU WANT TO REMOVE THESE TOPPINGS FROM YOUR INVENTORY?",
+            "description": "ARE YOU SURE YOU WANT TO REMOVE THESE TOPPINGS FROM YOUR INVENTORY?",
             "image": embed_image,
-            "thumbnail": False
+            "thumbnail": False,
         }
 
-        await RemoveToppingsMenu(timeout=600).start(ctx, ctx.message.author, toppings=remaining_toppings, fp=fp, embed_options=embed_options, inner_embed_options=inner_embed_options)
+        await RemoveToppingsMenu(timeout=600).start(
+            ctx,
+            ctx.message.author,
+            toppings=remaining_toppings,
+            fp=fp,
+            embed_options=embed_options,
+            inner_embed_options=inner_embed_options,
+        )
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
     async def debug(self, ctx, video_id, verbose=False):
