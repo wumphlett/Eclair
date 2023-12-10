@@ -229,3 +229,11 @@ special:
     icon: null
     rank: null
     optimizer: True
+  - name: TheoryCrafters
+    server: 1169679039246651392
+    role: 1169731330880315523
+    mod: 1182417297231581325
+    emoji: 🐲
+    icon: null
+    rank: null
+    optimizer: True

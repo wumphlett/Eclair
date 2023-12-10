@@ -116,7 +116,7 @@ class Requirements:
 
     @cache
     def ceiling_reqs(self):
-        return [valid for valid in self.valid if valid.op.str == "<="]
+        return [valid for valid in self.valid if valid.op.str == "<=" and valid.target != Decimal(0)]
 
     @cache
     def zero_reqs(self):

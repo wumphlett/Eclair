@@ -182,9 +182,9 @@ def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
                     align="right",
                 )
                 show_index and draw.text(
-                    (x - 10, y + 160), 
+                    (x - 10, y + 160),
                     str(i * 25 + y_mult * 5 + x_mult),
-                    font=STATIC["font"], 
+                    font=STATIC["font"],
                     fill="rgb(255, 255, 0)",
                     stroke_fill="rgb(0, 0, 0)",
                     stroke_width=2,

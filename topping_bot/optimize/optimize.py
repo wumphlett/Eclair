@@ -56,6 +56,10 @@ class Optimizer:
             topping for topping in self.toppings if not any(topping.value(zero.substat) for zero in reqs.zero_reqs())
         ]
 
+        # greedy solution finding
+        self.toppings.sort(key=self._greedy_solution_key)
+        self.solution = self._greedy_solution()
+
         # presort based on objective requirements to promote finding feasible solution sooner
         self.toppings.sort(key=self._key)
 
@@ -68,6 +72,38 @@ class Optimizer:
             self.toppings.insert(0, best_dmgres_top)
 
         yield from self._dfs([], 0)
+
+    def _greedy_solution_key(self, topping: Topping):
+        return (
+            ~(topping.flavor in self.reqs.objective_substats),
+            -topping.value(self.reqs.valid_substats),
+            -topping.value(self.reqs.objective_substats),
+        )
+
+    def _greedy_solution(self):
+        for offset in range(6):
+            greedy_solution = ToppingSet([])
+            for topping in self.toppings:
+                potential_combo = ToppingSet(greedy_solution.toppings + [topping])
+
+                if len(potential_combo.toppings) == 5:
+                    if all(req.op.compare(potential_combo.value(req.substat), req.target) for req in self.reqs.valid):
+                        greedy_solution = potential_combo
+                        break
+                else:
+                    if all(req.op.compare(potential_combo.value(req.substat), req.target) for req in self.reqs.valid):
+                        greedy_solution = potential_combo
+
+                    elif all(
+                        req.op.compare(
+                            potential_combo.value(req.substat), req.target - Decimal(1) - (Decimal("0.1") * offset)
+                        )
+                        for req in self.reqs.ceiling_reqs()
+                    ):
+                        greedy_solution = potential_combo
+
+            if len(greedy_solution.toppings) == 5:
+                return greedy_solution
 
     def _key(self, topping: Topping):
         return (
@@ -93,7 +129,7 @@ class Optimizer:
             # tqdm.write(f"{idx} : {combo[0]} : {self._key(combo[0])}")
             yield combo[0]
         if (reason := self._prune(combo, self.toppings[idx:])) != Prune.NONE:
-            # tqdm.write(f"PRUNE : {[str(topping) for topping in combo]}")
+            # tqdm.write(f"PRUNE : {reason} : {[str(topping) for topping in combo]}")
             return reason
         if len(combo) == 5:
             topping_set = ToppingSet(combo)
@@ -182,12 +218,6 @@ class Optimizer:
                 mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
 
                 for _ in range(wildcard_count):
-                    # combined = self._best_combined_all_case(combo, toppings, mutable_set_reqs)
-                    # if combined is not None:
-                    #     if combined > 0:
-                    #         all_value_met = True
-                    #         break
-
                     full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.all_substats)
                     if full_set is not None:
                         combined = full_set.value(self.reqs.all_substats) - sum(
@@ -212,12 +242,6 @@ class Optimizer:
                 mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
 
                 for _ in range(wildcard_count):
-                    # combined = self._best_combined_objective_case(combo, toppings, mutable_set_reqs)
-                    # if combined is not None:
-                    #     if combined > 0:
-                    #         obj_value_met = True
-                    #         break
-
                     full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.objective_substats)
                     if full_set is not None:
                         combined = full_set.value(self.reqs.objective_substats)
