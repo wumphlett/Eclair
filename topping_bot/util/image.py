@@ -341,8 +341,8 @@ def topping_set_to_image(topping_set: ToppingSet, user_id, name=None):
         cookie = Cookie.get(name)
         if cookie:
             head = Image.open(cookie.head)
-            factor = head.size[0] / 115
-            head = head.resize((int(head.size[0] * factor), int(head.size[1] * factor)))
+            factor = head.size[1] / 125
+            head = head.resize((int(head.size[0] / factor), int(head.size[1] / factor)))
             image.alpha_composite(head, (25, 25))
 
     image.save(fp)

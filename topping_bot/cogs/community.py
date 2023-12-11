@@ -715,7 +715,7 @@ class Community(Cog, description="Helper commands available to all!"):
         self,
         ctx,
         lvl=parameter(description="cpuff mc lvl", converter=Range[int, 1, 30]),
-        added_crit=parameter(description="ally crit% buff", converter=float, default=43.0),
+        added_crit=parameter(description="ally crit% buff", converter=float, default=0.0),
     ):
         guaranteed_success, capped_cdmg_buff, added = cpuff_needed_crit(lvl, Decimal(added_crit))
 
@@ -735,6 +735,8 @@ class Community(Cog, description="Helper commands available to all!"):
                     f"├ {added_crit:.1f}%",
                     "",
                     "*This includes the set bonus",
+                    "",
+                    "This is required CRIT% from toppings alone",
                 ],
                 thumbnail=False,
             )

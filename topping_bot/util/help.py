@@ -115,9 +115,14 @@ EXTRA_INFO = {
         "[4][2]",
     ],
     "arena": [
-        "Enter the name of known cookies, else enter a '*'",
+        "Enter the name of known cookies, and if unknown, enter a '*'",
         "",
         "e.g. !arena hb ww * bbp *",
+    ],
+    "basestat": [
+        "For the stat in question, note the value with no toppings, and with a single 9% increase",
+        "",
+        "e.g. !basestat 70056 75306",
     ],
 }
 
@@ -282,6 +287,9 @@ class BotHelpCommand(HelpCommand):
             embed=await new_embed(
                 title=f"{prefix(command)}{command.qualified_name} Command Guide",
                 description=description,
+                image="https://cdn.discordapp.com/attachments/1090961864202129438/1183800233029812274/basestat_help.png"
+                if command.qualified_name == "basestat"
+                else None,
                 thumbnail=False,
             )
         )

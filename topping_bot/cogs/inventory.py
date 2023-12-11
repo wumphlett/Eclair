@@ -257,15 +257,24 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
             )
         else:
-            topping_fp.unlink(missing_ok=True)
-            await send_msg(
+            embed_options = {
+                "title": "Delete Topping Inventory",
+                "description": "Would you like to remove all toppings from your inventory?",
+                "thumbnail": False,
+            }
+            inner_embed_options = {
+                "title": "CONFIRM REMOVE TOPPINGS",
+                "description": "ARE YOU SURE YOU WANT TO REMOVE ALL TOPPINGS FROM YOUR INVENTORY?",
+                "thumbnail": False,
+            }
+
+            await RemoveToppingsMenu(timeout=600).start(
                 ctx,
-                title="Deleted Topping Inventory",
-                description=[
-                    "Your topping inventory has been deleted",
-                    f"Please use !inv add <video> to update your inventory",
-                    "Use !tutorial to learn more",
-                ],
+                ctx.message.author,
+                toppings=[],
+                fp=topping_fp,
+                embed_options=embed_options,
+                inner_embed_options=inner_embed_options,
             )
 
     @commands.command(checks=[guild_only], brief="DEPRECATED", description="DEPRECATED | Use !inv add")
