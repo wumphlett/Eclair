@@ -15,7 +15,7 @@ def cookie_dump():
         if not fp.is_dir():
             cookie_id = fp.stem.split("_")[0].replace("cookie", "")
             cookie_dir = STATIC_PATH / "cookies" / cookie_id
-            if cookie_dir.exists():
+            if cookie_dir.exists() and not (cookie_dir / fp.name).exists():
                 shutil.move(fp, cookie_dir)
             else:
                 fp.unlink()

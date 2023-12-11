@@ -2,6 +2,7 @@ from decimal import Decimal
 from enum import Enum
 
 from topping_bot.crk.cookies import Cookie
+from topping_bot.crk.common import linear
 from topping_bot.util.const import INFO_PATH
 
 
@@ -35,6 +36,13 @@ class Type(Enum):
     MALA_SAUCE = "Mala Sauce"
     MADELEINE = "Madeleine"
     LATTE = "Latte"
+    TEA_KNIGHT = "Tea Knight"
+    WILDBERRY = "Wildberry"
+    MANGO = "Mango"
+    PARFAIT = "Parfait"
+    SORBET_SHARK = "Sorbet Shark"
+    BLACK_RAISIN = "Black Raisin"
+    SNOW_SUGAR = "Snow Sugar"
 
 
 CANDIES = set(candy.value for candy in Type)
@@ -158,6 +166,60 @@ class Candy:
                 ("Amplified Debuffs", f"{Decimal(20):.1f}%"),
                 ("Extra DMG", f'{Decimal("272.2") + (self.lvl - 1) * (Decimal("47.8") / Decimal(29)):.1f}%'),
                 ("Healing Poisoned", f"{-Decimal(40):.1f}%"),
+            ]
+        elif self.candy == Type.TEA_KNIGHT:
+            return [
+                ("Skill Targets", "Extra DMG"),
+                ("True DMG", f"{Decimal(10):.1f}%"),
+                ("DMG (Others)", f"{linear(125, 200, 30)(self.lvl):.1f}%"),
+                ("Skill Target Stun", f"2.0s"),
+                ("Extra DMG (Stun Immune)", f"{Decimal(300):.1f}%"),
+                ("Cooldown", f"-3.5s"),
+                ("Healing", f"{Decimal('36.1'):.1f}%"),
+                ("Passive ATK", f"{Decimal('1.5'):.1f}% per {Decimal(5):.1f}% Team's Total HP Lost"),
+            ]
+        elif self.candy == Type.WILDBERRY:
+            return [
+                ("HP Shield", f"{linear(3, 10, 30)(self.lvl):.1f}%"),
+                ("Final Blow Extra DMG", f"{Decimal(175):.1f}%"),
+            ]
+        elif self.candy == Type.MANGO:
+            return [
+                ("HP Shield", f"{Decimal(20):.1f}%"),
+                ("Extra DMG (Debuff Targets)", f"{linear(136, '163.2', 30)(self.lvl):.1f}%"),
+                ("Great Wave", f"{Decimal(60):.1f}%"),
+                ("Great Wave DMG", f"{Decimal('196.6'):.1f}%"),
+            ]
+        elif self.candy == Type.PARFAIT:
+            return [
+                ("HP Shield Convert", f"13.0s"),
+                ("HP Shield", f"{linear('125.5', 178, 30)(self.lvl):.1f}%"),
+                ("Debuff Immunity", f"4.0s"),
+                ("Healing Received", f"{Decimal(6):.1f}%"),
+            ]
+        elif self.candy == Type.SORBET_SHARK:
+            return [
+                ("Extra Area DMG", f"{linear('670.3', '804.4', 30)(self.lvl):.1f}%"),
+                ("Extra DMG", f"{Decimal(400):.1f}%"),
+                ("Injury Max HP", f"{-Decimal('12.5'):.1f}%"),
+            ]
+        elif self.candy == Type.BLACK_RAISIN:
+            return [
+                ("Area DMG Hits", "+3 Times (8 Total)"),
+                ("Area DMG After CRIT", f"{linear('162.5', 195, 30)(self.lvl):.1f}%"),
+                ("Skill CRIT DMG", f"{Decimal(170):.1f}%"),
+                ("Amplify Debuff", f"{Decimal(5):.1f}%"),
+            ]
+        elif self.candy == Type.SNOW_SUGAR:
+            return [
+                (
+                    "Snow King",
+                    f"{linear(74, '86.5', 30)(self.lvl):.1f}% ATK, {linear('195.5', '243.1', 30)(self.lvl):.1f}% DEF, {linear(339, 465, 30)(self.lvl):.1f}% HP",
+                ),
+                ("Snow King DMG", f"{Decimal('151.6'):.1f}%"),
+                ("ATK (Others)", f"{Decimal('45.5'):.1f}%"),
+                ("Additional DMG to Frozen", f"{Decimal('242.8'):.1f}%"),
+                ("Snow King DMG Focus", f"{Decimal(50):.1f}%"),
             ]
 
     @property
@@ -284,4 +346,64 @@ class Candy:
                     ("Silence Duration", f"{Decimal('1.5'):.1f}s"),
                     ("Restore Ally HP", f"{Decimal(20):.1f}%"),
                 ]
-        return None
+        elif self.candy == Type.TEA_KNIGHT:
+            if self.lvl >= 30:
+                return [
+                    ("Regular Targets", "Extra DMG"),
+                    ("True DMG", f"{Decimal(3):.1f}%"),
+                    ("DMG (Others)", f"{Decimal(175):.1f}%"),
+                ]
+            elif self.lvl >= 20:
+                return [
+                    ("Regular Targets", "Extra DMG"),
+                    ("True DMG", f"{Decimal(2):.1f}%"),
+                    ("DMG (Others)", f"{Decimal(150):.1f}%"),
+                ]
+            elif self.lvl >= 10:
+                return [
+                    ("Regular Targets", "Extra DMG"),
+                    ("True DMG", f"{Decimal(1):.1f}%"),
+                    ("DMG (Others)", f"{Decimal(125):.1f}%"),
+                ]
+        elif self.candy == Type.WILDBERRY:
+            if self.lvl >= 30:
+                return [("Ally CRIT Resist", "20.0%")]
+            elif self.lvl >= 20:
+                return [("Ally CRIT Resist", "15.0%")]
+            elif self.lvl >= 10:
+                return [("Ally CRIT Resist", "10.0%")]
+        elif self.candy == Type.MANGO:
+            if self.lvl >= 30:
+                return [("Giant Wave DMG", "30.0%")]
+            elif self.lvl >= 20:
+                return [("Giant Wave DMG", "25.0%")]
+            elif self.lvl >= 10:
+                return [("Giant Wave DMG", "20.0%")]
+        elif self.candy == Type.PARFAIT:
+            if self.lvl >= 30:
+                return [("Team Healing", "138.6%")]
+            elif self.lvl >= 20:
+                return [("Team Healing", "133.9%")]
+            elif self.lvl >= 10:
+                return [("Team Healing", "123.8%")]
+        elif self.candy == Type.SORBET_SHARK:
+            if self.lvl >= 30:
+                return [("Healing Debuff", "-50.0%")]
+            elif self.lvl >= 20:
+                return [("Healing Debuff", "-45.0%")]
+            elif self.lvl >= 10:
+                return [("Healing Debuff", "-40.0%")]
+        elif self.candy == Type.BLACK_RAISIN:
+            if self.lvl >= 30:
+                return [("Received DMG", "5.0%")]
+            elif self.lvl >= 20:
+                return [("Received DMG", "4.4%")]
+            elif self.lvl >= 10:
+                return [("Received DMG", "3.8%")]
+        elif self.candy == Type.SNOW_SUGAR:
+            if self.lvl >= 30:
+                return [("Snow King HP Shield", "100.0%")]
+            elif self.lvl >= 20:
+                return [("Snow King HP Shield", "90.0%")]
+            elif self.lvl >= 10:
+                return [("Snow King HP Shield", "80.0%")]

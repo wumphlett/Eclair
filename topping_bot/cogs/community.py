@@ -21,6 +21,7 @@ from discord.ext.commands.errors import BadArgument, RangeError, MissingRequired
 from topping_bot.crk.candies import CANDIES, Candy, Type as CandyType
 from topping_bot.crk.cookies import Cookie, Filter, Order, Position
 from topping_bot.crk.gacha import Gacha
+from topping_bot.crk.jams import JAMS, Jam, Type as JamType
 from topping_bot.crk.stats import (
     cpuff_needed_crit,
     cookie_cd,
@@ -38,7 +39,7 @@ from topping_bot.util.const import CONFIG, DATA_PATH, DEBUG, TMP_PATH
 from topping_bot.util.cooldown import PULL_USER_1_PER_3S, PULL_MEMBER_5_PER_DAY, PULL_USER_50_PER_DAY
 from topping_bot.util.help import command_signature, display_name, sanitize_error
 from topping_bot.util.image import cookie_to_image, gacha_inv_to_image, gacha_pull_to_image, order_to_image
-from topping_bot.ui.common import Paginator, WipeDataMenu
+from topping_bot.ui.common import Paginator
 from topping_bot.util.utility import camel_case_split
 
 
@@ -535,6 +536,66 @@ class Community(Cog, description="Helper commands available to all!"):
         )
 
     @cooldown(1, 1, BucketType.user)
+    @commands.hybrid_command(brief="Jam info", description="View crystal jam info at a given lvl")
+    @app_commands.describe(cookie="Name", lvl="Crystal Jam lvl (#)", start="Starting Crystal Jam lvl (#)")
+    @app_commands.autocomplete(cookie=Autocomplete(JamType).call)
+    async def cj(
+        self,
+        ctx,
+        cookie=parameter(description="name", converter=str),
+        lvl=parameter(description="lvl", converter=Range[int, 1, 30]),
+        start=parameter(description="starting_lvl", converter=Range[int, 0, 29], default=0),
+    ):
+        if lvl <= start:
+            return
+
+        search = cookie
+        cookie = Cookie.get(cookie)
+        if not cookie or cookie.name not in JAMS:
+            await send_msg(
+                ctx,
+                title=f"Err: Crystal Jam Not Found",
+                description=f"Unable to find a crystal jam with the search string '{search}'",
+            )
+            return
+
+        jam = Jam(cookie, lvl)
+        description = ["Effects:"] + [f"├ {txt}: {value}" for txt, value in jam.effects]
+
+        if jam.enchantments:
+            description += ["", "Enchantments:"] + [f"├ {txt}: {value}" for txt, value in jam.enchantments]
+
+        description += ["", "Ascension Buffs:"] + [f"├ {txt}: {value}" for txt, value in jam.ascension_buffs]
+
+        description += [
+            "",
+            f"Upgrade Costs ({lvl - 1} -> {lvl}):",
+            f"├ {jam.soul()[1]} {jam.soul()[0]}",
+            f"├ {jam.crystal()} Sugar Crystals",
+            f"├ {jam.ingredient()} Resonant Ing.",
+        ]
+
+        description += [
+            "",
+            f"Upgrade Costs ({start} -> {lvl}):",
+        ]
+
+        soul_cost = defaultdict(int)
+        for lvl in range(start + 1, lvl + 1):
+            soul_cost[jam.soul(lvl)[0]] += jam.soul(lvl)[1]
+
+        for soul_type in ("Common", "Rare", "Epic", "Legendary"):
+            if soul_cost[f"{soul_type} Soul Ess."]:
+                description += [f"├ {soul_cost[f'{soul_type} Soul Ess.']} {soul_type} Soul Ess."]
+
+        description += [
+            f"├ {sum(jam.crystal(lvl) for lvl in range(start + 1, lvl + 1))} Sugar Crystals",
+            f"├ {sum(jam.ingredient(lvl) for lvl in range(start + 1, lvl + 1))} Resonant Ing.",
+        ]
+
+        await send_msg(ctx, title=f"{jam.jam.value} Crystal Jam (lvl {lvl})", description=description, thumbnail=False)
+
+    @cooldown(1, 1, BucketType.user)
     @commands.hybrid_command(brief="Powder cost", description="View powder cost to upgrade a cookie")
     @app_commands.describe(start="Starting Cookie lvl (#)", end="Ending Cookie lvl (#)")
     async def powder(
@@ -565,23 +626,11 @@ class Community(Cog, description="Helper commands available to all!"):
         )
 
     @cooldown(1, 1, BucketType.user)
-    @commands.hybrid_command(brief="Arena meta", description="View the current arena meta cookies list")
-    async def meta(self, ctx):
-        order = Order(Filter.META)
-
-        await send_msg(
-            ctx,
-            title="Current Arena Meta Cookies",
-            description=["All Meta Cookies:"] + [f"├ {cookie.name}" for cookie in order.cookies],
-            footer=f"To request updates, join the dev server",
-        )
-
-    @cooldown(1, 1, BucketType.user)
     @commands.hybrid_command(brief="Cookie order", description="View the current cookie order")
     @app_commands.describe(cookie_filter="List Filter")
     @app_commands.rename(cookie_filter="filter")
     async def order(
-        self, ctx, cookie_filter=parameter(converter=Filter, default=Filter.META, description="list filter")
+        self, ctx, cookie_filter=parameter(converter=Filter, default=Filter.EPIC_PLUS, description="list filter")
     ):
         order = Order(cookie_filter)
         image = order_to_image(order, self.bot.user)
@@ -621,7 +670,7 @@ class Community(Cog, description="Helper commands available to all!"):
         c3=parameter(description="cookie #3"),
         c4=parameter(description="cookie #4"),
         c5=parameter(description="cookie #5"),
-        cookie_filter=parameter(converter=Filter, default=Filter.META, description="list filter"),
+        cookie_filter=parameter(converter=Filter, default=Filter.EPIC_PLUS, description="list filter"),
     ):
         order = Order(cookie_filter)
 

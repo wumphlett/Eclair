@@ -110,7 +110,7 @@ class Gacha:
                 selected_rarity = (Rarity.SUPER_EPIC, Rarity.EPIC)
             elif roll <= 58_748:
                 selected_rarity = (Rarity.RARE,)
-            elif roll <= 99_500:
+            elif roll <= 99_000:
                 selected_rarity = (Rarity.COMMON,)
             else:
                 selected_rarity = (Rarity.SPECIAL,)
@@ -129,12 +129,7 @@ class Gacha:
 
         soulstones = 20 if is_cookie_pull else random.randint(1, 3)
 
-        if Rarity.EPIC in selected_rarity and random.randint(1, 8) <= len(Cookie.featured()):
-            cookie = random.choice(Cookie.featured())
-        elif selected_rarity == (Rarity.ANCIENT, Rarity.LEGENDARY, Rarity.DRAGON) and random.randint(1, 4) == 1:
-            cookie = Cookie.legendary()
-        else:
-            cookie = random.choice(Cookie.filter(selected_rarity))
+        cookie = random.choice(Cookie.filter(selected_rarity))
 
         self.pulls += 1
 

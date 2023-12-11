@@ -2,7 +2,6 @@ import inspect
 from enum import Enum
 from typing import Union
 
-from discord.ext import commands
 from discord.ext.commands import Cog, Group, HelpCommand, Range
 
 from topping_bot.util.common import new_embed
@@ -23,12 +22,12 @@ ORDERING = {
         "gb c trophy",
         "gb c eff",
         "mc",
+        "cj",
         "treasure",
         "statue",
         "beacon",
         "relic",
         "powder",
-        "meta",
         "arena",
         "order",
         "cookie",
@@ -41,9 +40,6 @@ ORDERING = {
         "gacha lb",
         "source",
         "coupons",
-        "claim",
-        "stopcoupons",
-        "wipedata",
     ],
     "Cookies": [
         "tutorial",

@@ -38,7 +38,6 @@ class Position(Enum):
 
 
 class Filter(Enum):
-    META = "meta"
     EPIC_PLUS = "epic+"
     FULL = "full"
 
@@ -71,18 +70,18 @@ def cookie_data():
 
     cookies = {k.lower(): v for k, v in cookies.items()}
 
-    return cookies, aliases, featured, legendary
+    return cookies, aliases
 
 
 def cookie_order():
     with open(INFO_PATH / "cookies.yaml", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    return data["order"], data["meta"]
+    return data["order"]
 
 
 def cookie_map():
-    cookies, _, _, _ = cookie_data()
+    cookies, _ = cookie_data()
     return {cookie["id"]: cookie for cookie in cookies.values()}
 
 
@@ -116,28 +115,14 @@ class Cookie:
     @classmethod
     @cache
     def all(cls):
-        cookies, aliases, _, _ = cls._data
+        cookies, aliases = cls._data
         return [cls(**cookie) for cookie in cookies.values()]
 
     @classmethod
     @cache
     def filter(cls, rarities: Tuple[Rarity]):
-        cookies, aliases, _, _ = cls._data
+        cookies, aliases = cls._data
         return [cls(**cookie) for cookie in cookies.values() if cookie["rarity"] in rarities]
-
-    @classmethod
-    @cache
-    def featured(cls):
-        cookies, aliases, featured, _ = cls._data
-
-        return [cls(**cookies.get(feature.lower())) for feature in featured]
-
-    @classmethod
-    @cache
-    def legendary(cls):
-        cookies, aliases, _, legendary = cls._data
-
-        return cls(**cookies.get(legendary.lower()))
 
     @classmethod
     def pk(cls, pk: int):
@@ -146,7 +131,7 @@ class Cookie:
     @classmethod
     def get(cls, search: str):
         search = search.lower()
-        cookies, aliases, _, _ = cls._data
+        cookies, aliases = cls._data
 
         if cookie := cookies.get(search):
             return cls(**cookie)
@@ -170,6 +155,10 @@ class Cookie:
     @property
     def card(self):
         return self.dir / f"cookie{str(self.id).zfill(4)}_card.png"
+
+    @property
+    def head(self):
+        return self.dir / f"cookie{str(self.id).zfill(4)}_head.png"
 
     @property
     def stand(self):
@@ -227,13 +216,10 @@ class Order:
     _order = cookie_order()
 
     def __init__(self, cookie_filter: Filter):
-        cookies, aliases, _, _ = self._data
-        order, meta = self._order
+        cookies, aliases = self._data
+        order = self._order
 
-        if cookie_filter == Filter.META:
-            self.cookies = meta
-            self.cookies.sort(key=lambda x: order.index(x))
-        elif cookie_filter == cookie_filter.EPIC_PLUS:
+        if cookie_filter == cookie_filter.EPIC_PLUS:
             self.cookies = [
                 cookie
                 for cookie in order
