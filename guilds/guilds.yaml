@@ -196,7 +196,7 @@ dark-cacao:
     server: 891943428424888391
     role: 1052757600288112651
     channels:
-      - 1105608134510252095
+      - 1096970748792418304
     emoji: 🍣
     icon: null
     rank: 2
@@ -209,15 +209,6 @@ dark-cacao:
     emoji: ⏰
     icon: null
     rank: 3
-    optimizer: True
-  - name: Wagyu
-    server: 891943428424888391
-    role: 965724837601497159
-    channels:
-      - 1105608134510252095
-    emoji: 🐮
-    icon: null
-    rank: 4
     optimizer: True
 arena: []
 special:
