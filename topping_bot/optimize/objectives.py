@@ -161,7 +161,6 @@ class EDMG(Special):
         return {Type.E_DMG: self.value(topping_set) * 100, Type.RNG: rng * 200}
 
     def e_dmg(self, atk: Decimal, crit: Decimal):
-        crit = min(Decimal(1), crit)
         return (self.crit_dmg - 1) * atk * crit + (1 + self.mult) * atk
 
 
