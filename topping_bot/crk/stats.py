@@ -70,5 +70,5 @@ def cpuff_needed_crit(lvl: int, combined: Decimal):
     else:
         return guaranteed_success, None, added
 
-    capped_cdmg_buff = Decimal("25") / divisor - Decimal("13")
+    capped_cdmg_buff = (Decimal("25") / divisor).quantize(Decimal(1), rounding=ROUND_UP) - Decimal("13")
     return guaranteed_success, capped_cdmg_buff, added
