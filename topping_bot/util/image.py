@@ -339,7 +339,7 @@ def topping_set_to_image(topping_set: ToppingSet, user_id, name=None):
 
     if name:
         cookie = Cookie.get(name)
-        if cookie:
+        if cookie and cookie.head.exists():
             head = Image.open(cookie.head)
             factor = head.size[1] / 125
             head = head.resize((int(head.size[0] / factor), int(head.size[1] / factor)))
