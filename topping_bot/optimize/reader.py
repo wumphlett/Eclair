@@ -229,7 +229,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 x, y = min_loc
-                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.55)
+                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.6)
                 if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
                     continue
 
