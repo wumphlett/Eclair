@@ -2,6 +2,8 @@ from decimal import Decimal
 from difflib import SequenceMatcher
 from enum import Enum
 
+from topping_bot.crk.common import linear
+
 
 class Type(Enum):
     HISTORY_1 = "Hall of History 1"
@@ -10,6 +12,12 @@ class Type(Enum):
     HISTORY_4 = "Hall of History 4"
     HISTORY_5 = "Hall of History 5"
     HISTORY_6 = "Hall of History 6"
+    HISTORY_II_1 = "Hall of History II 1"
+    HISTORY_II_2 = "Hall of History II 2"
+    HISTORY_II_3 = "Hall of History II 3"
+    HISTORY_II_4 = "Hall of History II 4"
+    HISTORY_II_5 = "Hall of History II 5"
+    HISTORY_II_6 = "Hall of History II 6"
     NATURE_1 = "Hall of Nature 1"
     NATURE_2 = "Hall of Nature 2"
     NATURE_3 = "Hall of Nature 3"
@@ -31,6 +39,8 @@ class Type(Enum):
     HOT_POT = "Rainbow Jellyragora Hot Pot"
     GRIMOIRE = "Giant Grimoire"
     MOONSTONE = "Moonstone"
+    SARCOPHAGUS = "Golden Cheese Cookie's Sarcophagus"
+    DARK_THRONE = "Dark Cacao Cookie's Throne"
 
 
 RELICS = set(relic.value for relic in Type)
@@ -81,6 +91,30 @@ class Relic:
         elif self.relic == Type.HISTORY_6:
             return [
                 ("Alliance Revive", f"{Decimal(40) + (self.lvl - 1) * (Decimal(60) / Decimal(19)):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_1:
+            return [
+                ("Alliance Fire-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_2:
+            return [
+                ("Alliance Poison-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_3:
+            return [
+                ("Alliance Earth-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_4:
+            return [
+                ("Alliance Water-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_5:
+            return [
+                ("Alliance Light-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.HISTORY_II_6:
+            return [
+                ("Alliance Ice-type DMG", f"{linear(1, 20, 20)(self.lvl):.1f}%"),
             ]
         elif self.relic == Type.NATURE_1:
             return [
@@ -176,4 +210,12 @@ class Relic:
         elif self.relic == Type.MOONSTONE:
             return [
                 ("Guild Battle CRIT DMG", f"{Decimal(5) + (self.lvl - 1) * (Decimal(25) / Decimal(19)):.1f}%"),
+            ]
+        elif self.relic == Type.SARCOPHAGUS:
+            return [
+                ("Alliance Artifact Points", f"+{linear(1, 20, 20)(self.lvl):.1f}%"),
+            ]
+        elif self.relic == Type.DARK_THRONE:
+            return [
+                ("Ancient Cookies DEF", f"{linear('0.5', 10, 20)(self.lvl):.1f}%"),
             ]

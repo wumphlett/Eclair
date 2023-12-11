@@ -46,10 +46,6 @@ class Stats(Cog, description="View build related statistics"):
             description=[
                 "Base STAT%:",
                 f"├ {cookie_base_atk(before, after, diff / Decimal(100)) * 100:.2f}",
-                "",
-                "If the STAT in question is ATK:",
-                "Typical range across all cookies is 25%-65%",
-                "The higher the base ATK% buff, the less effective ATK toppings are",
             ],
         )
 

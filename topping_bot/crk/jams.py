@@ -7,18 +7,18 @@ from topping_bot.util.const import INFO_PATH
 
 
 cj_souls = []
-with open(INFO_PATH / "mcsoul.txt") as f:
+with open(INFO_PATH / "cjsoul.txt") as f:
     for cj_soul in f.readlines():
         soul_type, soul_value = cj_soul.split(",")
         cj_souls.append((f"{soul_type.title()} Soul Ess.", int(soul_value)))
 
 cj_crystals = []
-with open(INFO_PATH / "mccrystal.txt") as f:
+with open(INFO_PATH / "cjcrystal.txt") as f:
     for cj_crystal in f.readlines():
         cj_crystals.append(int(cj_crystal.replace(",", "")))
 
 cj_ingredients = []
-with open(INFO_PATH / "mcingredient.txt") as f:
+with open(INFO_PATH / "cjingredient.txt") as f:
     for cj_ingredient in f.readlines():
         cj_ingredients.append(int(cj_ingredient.replace(",", "")))
 
