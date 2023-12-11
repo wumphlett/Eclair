@@ -195,7 +195,7 @@ def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
     return images
 
 
-def topping_set_to_image(topping_set: ToppingSet, user_id):
+def topping_set_to_image(topping_set: ToppingSet, user_id, name=None):
     fp = TMP_PATH / f"{user_id}.png"
 
     image = Image.new("RGBA", (1080, 1080), "rgb(3, 5, 9)")
@@ -336,6 +336,14 @@ def topping_set_to_image(topping_set: ToppingSet, user_id):
             stroke_width=2,
             anchor="ma",
         )
+
+    if name:
+        cookie = Cookie.get(name)
+        if cookie:
+            head = Image.open(cookie.head)
+            factor = head.size[0] / 115
+            head = head.resize((int(head.size[0] * factor), int(head.size[1] * factor)))
+            image.alpha_composite(head, (25, 25))
 
     image.save(fp)
     return fp
@@ -703,7 +711,7 @@ def gacha_inv_to_image(gacha, user_id):
 def cookie_to_image(cookie, gacha, user_id):
     fp = TMP_PATH / f"cookie-{user_id}.png"
 
-    image = Image.open(cookie.lobby).crop((0, 35, 1200, 685)).resize((1920, 1040))
+    image = Image.open(cookie.lobby).convert(mode="RGBA").crop((0, 35, 1200, 685)).resize((1920, 1040))
     draw = ImageDraw.Draw(image)
 
     # Cookie Sprite

@@ -295,7 +295,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
             ],
         )
 
-    @inv.command(aliases=["delt"], brief="Delete topping", description="Delete topping(s) from inventory by index")
+    @inv.command(aliases=["delt"], brief="Del top", description="Delete topping(s) from inventory by index")
     async def deletetopping(
         self,
         ctx,
@@ -424,6 +424,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             solution = Value("i", -1)
             shared_memory = SharedMemory(create=True, size=64)
+            full_extraction(fp, topping_fp, shared_memory.name, solution, True, verbose)
             process = Process(
                 target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution, True, verbose)
             )

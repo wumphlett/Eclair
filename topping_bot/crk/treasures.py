@@ -28,8 +28,11 @@ class Type(Enum):
     STAFF = "Blind Healer's Staff"
     SLEEPYHEAD_WATCH = "Sleepyhead's Jelly Watch"
     FROZEN_TORCH = "Milk Tribe's Frozen Torch"
+    VIAL = "Vial of Raging Dunes"
+    EXPLORER_MONOCLE = "Explorer's Monocle"
     ACORN = "Acorn Snowball With a Tiny Cookie"
     ACORN_BOMB = "Blossoming Acorn Bomb"
+    ENERGY_DRINK = "Ice-cold Energy Drink"
     ECHO = "Echo of the Hurricane's Song"
     SCYTHE = "Grim-looking Scythe"
     LOLLIPOP = "Bear Jelly's Lollipop"
@@ -173,6 +176,16 @@ class Treasure:
                 ("Freeze Duration", f"{Decimal(1):.1f}s"),
                 ("Frost Duration", f"{Decimal(16):.1f}s"),
             ]
+        elif self.treasure == Type.VIAL:
+            return [
+                ("DMG", f"{linear(85, 105, 12)(self.lvl):.1f}%"),
+                ("ATK", f"{linear(20, 30, 12)(self.lvl):.1f}%"),
+                ("CRIT%", f"{linear(15, 25, 12)(self.lvl):.1f}%"),
+            ]
+        elif self.treasure == Type.EXPLORER_MONOCLE:
+            return [
+                ("DEF", f"{linear(20, 35, 12)(self.lvl):.1f}%"),
+            ]
         elif self.treasure == Type.ACORN:
             return [
                 ("DMG Resist", f"{linear(10, 20, 12)(self.lvl):.1f}%"),
@@ -182,6 +195,10 @@ class Treasure:
             return [
                 ("DMG", f"{linear(15, 35, 12)(self.lvl):.1f}%"),
                 ("Target DEF", f"{linear(-10, -20, 12)(self.lvl):.1f}%"),
+            ]
+        elif self.treasure == Type.ENERGY_DRINK:
+            return [
+                ("Healing", f"{linear(15, 30, 12)(self.lvl):.1f}%"),
             ]
         elif self.treasure == Type.ECHO:
             return [

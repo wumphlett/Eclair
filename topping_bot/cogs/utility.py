@@ -236,24 +236,6 @@ class Utility(Cog, description="The utility commands available to you"):
         if push:
             await channel.send(content="<@&1101366662147604540>")
 
-    @commands.command(checks=[admin_only], brief="Vote", description="Vote")
-    async def vote(self, ctx, cookie: str, add=True):
-        cookie = Cookie.get(cookie)
-
-        channel = await ctx.bot.fetch_channel(CONFIG["community"]["meta-vote"])
-
-        msg = await channel.send(
-            embed=await new_embed(
-                title=f"{'Add' if add else 'Remove'} {cookie.name}?",
-                description=[
-                    f"{'Add' if add else 'Remove'} {cookie.name} {'to' if add else 'from'} the meta list?",
-                    "Vote up for yes, down for no",
-                ],
-            )
-        )
-        await msg.add_reaction("🔼")
-        await msg.add_reaction("🔽")
-
     @commands.command(checks=[admin_only], brief="Status", description="Status")
     async def status_msg(self, ctx, msg):
         await self.bot.change_presence(activity=Game(msg))
