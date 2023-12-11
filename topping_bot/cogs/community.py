@@ -757,6 +757,8 @@ class Community(Cog, description="Helper commands available to all!"):
                     f"├ {added_crit:.1f}%",
                     "",
                     "*This includes the set bonus",
+                    "",
+                    "This is required CRIT% from toppings alone",
                 ],
                 thumbnail=False,
             )
