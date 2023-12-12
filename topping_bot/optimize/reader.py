@@ -229,15 +229,15 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 x, y = min_loc
-                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.6)
+                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.65)
                 if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
                     continue
 
-                # if resonance == Resonance.DRACONIC:
-                #     tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
-                #     tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                #     cv2.imshow("Dev", tmp)
-                #     cv2.waitKey(0)
+                if resonance == Resonance.SEA_SALT:
+                    tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
+                    tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    cv2.imshow("Dev", tmp)
+                    cv2.waitKey(0)
 
                 if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.6:
                     metatype = resonance

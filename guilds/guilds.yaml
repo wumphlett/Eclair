@@ -215,6 +215,8 @@ special:
   - name: Optimizers
     server: 1090949984356159538
     role: 1091054770615238676
+    channels:
+      - 1090960184987365397
     mod: 1107519939679633448
     emoji: 📜
     icon: null
@@ -223,6 +225,8 @@ special:
   - name: TheoryCrafters
     server: 1169679039246651392
     role: 1169731330880315523
+    channels:
+      - 1183230885810675752
     mod: 1182417297231581325
     emoji: 🐲
     icon: null

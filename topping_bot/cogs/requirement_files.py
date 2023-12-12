@@ -35,6 +35,7 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
 
     @req.group(
         name="def",
+        aliases=["default"],
         checks=[approved_guild_only, guild_only, moderator_only],
         brief="Default req file commands",
         description="Commands to manage default req files",

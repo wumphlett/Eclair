@@ -46,7 +46,7 @@ def approved_guild_ctx(ctx, member_id=None):
                 return guild
         raise Exception("invalid debug name set")
     elif ctx.guild:
-        possible_guilds = [guild for guild in Guild.optimizers if ctx.channel.id in guild.channels or guild.is_special]
+        possible_guilds = [guild for guild in Guild.optimizers if ctx.channel.id in guild.channels]
         for guild in possible_guilds:
             server = ctx.bot.get_guild(guild.server)
             if member_id == ctx.bot.owner_id:

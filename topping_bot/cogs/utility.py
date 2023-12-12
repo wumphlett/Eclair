@@ -111,26 +111,6 @@ class Utility(Cog, description="The utility commands available to you"):
     async def nick(self, ctx, nickname):
         await ctx.bot.user.edit(username=nickname)
 
-    @commands.command(checks=[admin_only], brief="View/edit todo", description="View or edit the todo list")
-    async def todo(self, ctx, *args):
-        if args:
-            if not await admin_only(ctx):
-                return
-
-            item = " ".join(args)
-            with open(INFO_PATH / "todo.txt", "a") as f:
-                f.write(f"[ ] {item}\n")
-
-        with open(INFO_PATH / "todo.txt") as f:
-            items = f.readlines()
-
-        await send_msg(
-            ctx,
-            title=f"Todo",
-            description="".join(items),
-            thumbnail=False,
-        )
-
     @commands.command(brief="Acquired info", description="View acquired info that we've discovered")
     async def info(self, ctx):
         await send_msg(
