@@ -28,6 +28,12 @@ Objective requirements define a goal to achieve with the cookie's stats:
   - `E[DMG]`: Combines CRIT% and ATK.
   - `Combo`: Combines multiple substats.
 
+## Modifiers
+Modifiers allow the inclusion of additional factors that affect the final statistics of cookies:
+- **Format**: Modifiers are defined in a separate section under `modifiers`.
+- **Types**: Various stat modifiers can be included such as CRIT%, CRIT DMG, ATK MULT, etc.
+- **Specification**: Each modifier should specify its source and value.
+
 ## Discord Commands
 - **Upload a file**: `!req upload`
   - Attach your .yaml file to the Discord message.
