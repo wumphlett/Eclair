@@ -75,7 +75,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                 ctx,
                 title="Err: No Requirements Files",
                 description=[
-                    "You have uploaded a requirement file",
+                    "You have not uploaded a requirement file",
                     "Please use !req upload <attch file> to specify a team to optimize",
                     "Use !req help to learn more",
                 ],
