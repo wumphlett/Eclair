@@ -30,3 +30,6 @@ upload images (i.e. inventories)
 ## Debug
 1. Add `DEBUG_BOT=True` to `.env`
 2. Run with `poetry run python topping_bot/bot.py`
+
+## Further Documentation
+Please see `docs` for more info on how certain aspects of the bot works
