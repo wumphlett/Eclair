@@ -25,6 +25,7 @@ If you have any questions, please don't hesitate to reach out on [[Discord]](htt
 1. In `config.yaml`, specify `img-dump` to a channel id the bot has access to. It will use this channel to temporarily
 upload images (i.e. inventories)
 2. Rename `guilds/guilds.yaml.template` to `guilds/guilds.yaml`, specify values for your guild
+3. Change `debug` value in `config.yaml` to a valid guild specified in `guilds.yaml`
 
 ## Debug
 1. Add `DEBUG_BOT=True` to `.env`
