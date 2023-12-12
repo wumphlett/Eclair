@@ -141,6 +141,17 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
             return
 
         options = await filter_requirements_files(ctx, include_personal=target is not None)
+        if len(options) == 0:
+            await send_msg(
+                ctx,
+                title="Err: No Requirements Files",
+                description=[
+                    "You have not uploaded a requirement file",
+                    "Please use !req upload <attch file> to specify a team to optimize",
+                    "Use !req help to learn more",
+                ],
+            )
+            return
 
         reqs_view = RequirementView()
         await reqs_view.start(ctx, options, "What requirement file do you want to copy?")
@@ -217,6 +228,17 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
             if not default_mode
             else await filter_requirements_files(ctx, include_personal=False)
         )
+        if len(options) == 0:
+            await send_msg(
+                ctx,
+                title="Err: No Requirements Files",
+                description=[
+                    "You have not uploaded a requirement file",
+                    "Please use !req upload <attch file> to specify a team to optimize",
+                    "Use !req help to learn more",
+                ],
+            )
+            return
 
         reqs_view = RequirementView()
         await reqs_view.start(ctx, options, "What requirement file do you want to download?")

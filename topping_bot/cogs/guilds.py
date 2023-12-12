@@ -40,9 +40,6 @@ class Guilds(Cog, description="The guild commands available to you"):
         self.dev_server = None
         Guild.update()
 
-    def cog_check(self, ctx):
-        return approved_guild_only(ctx)
-
     @Cog.listener()
     async def on_ready(self):
         self.dev_server = self.bot.get_guild(CONFIG["community"]["dev-server"])
@@ -253,23 +250,24 @@ class Guilds(Cog, description="The guild commands available to you"):
 
         async def reorder_roles():
             role_order = []
+            await asyncio.sleep(3) # need time to let created roles propagate
+            full_role_list = await subscribed_server.fetch_roles()
+            full_roles = {server_role.id: server_role for server_role in full_role_list}
             for guild in Guild.supported:
                 if (
                     not guild.is_special
                     and server_info["roles"].get(guild.name)
-                    and subscribed_server.get_role(server_info["roles"][guild.name])
+                    and full_roles.get(server_info["roles"][guild.name])
                 ):
-                    role_order.append(subscribed_server.get_role(server_info["roles"][guild.name]))
+                    role_order.append(full_roles.get(server_info["roles"][guild.name]))
             role_positions = {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
             idx = index_role.position - len(role_positions) - 1
-            for existing_role in subscribed_server.roles[: subscribed_server.roles.index(index_role)][::-1]:
+            full_role_list.sort(key=lambda x: -x.position)
+            for existing_role in full_role_list[full_role_list.index(index_role)+1:]:
                 if existing_role not in role_positions:
                     role_positions[existing_role] = idx
                     idx -= 1
-            offset = min(role_positions.values())
-            if offset < 0:
-                for k, v in role_positions.items():
-                    role_positions[k] = v * -offset
+            role_positions[index_role] = max(role_positions.values()) + 1
             await subscribed_server.edit_role_positions(role_positions)
 
         async def reorder_roles_error():
@@ -391,7 +389,7 @@ class Guilds(Cog, description="The guild commands available to you"):
         pass
 
     @guild.command(
-        checks=[guild_only, server_admin_only], brief="Subscribe to auto-guilds", description="Subscribe to auto-guilds"
+        checks=[guild_only, server_admin_only], brief="Join auto-guilds", description="Subscribe to auto-guilds"
     )
     async def subscribe(self, ctx):
         if ctx.guild.id in Guild.subscribed_servers:
@@ -456,7 +454,7 @@ class Guilds(Cog, description="The guild commands available to you"):
         await self.update_subscribed_server_config(ctx.guild.id, error_channel.id)
         await self.autoguilds()
 
-    @guild.command(checks=[guild_only, server_admin_only], brief="Cancel auto-guilds", description="Cancel auto-guilds")
+    @guild.command(checks=[guild_only, server_admin_only], brief="Leave auto-guilds", description="Cancel auto-guilds")
     async def cancel(self, ctx):
         server_fp = GUILD_PATH / f"{ctx.guild.id}.yaml"
         if not server_fp.exists():

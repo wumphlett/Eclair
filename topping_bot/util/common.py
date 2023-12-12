@@ -53,6 +53,11 @@ def approved_guild_ctx(ctx, member_id=None):
                 return guild
             elif (member := server.get_member(member_id)) is not None and member.get_role(guild.role):
                 return guild
+        if member_id == ctx.bot.owner_id:
+            for guild in Guild.supported:
+                if guild.name == CONFIG["debug"]:
+                    return guild
+            raise Exception("invalid debug name set")
     else:
         for guild in Guild.optimizers:
             member = ctx.bot.get_guild(guild.server).get_member(member_id)
