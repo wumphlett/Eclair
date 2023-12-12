@@ -218,7 +218,6 @@ class Inventory(Cog, description="View and update your topping inventory"):
                         ],
                         footer=f"admin: @{(await ctx.bot.application_info()).owner}",
                     )
-                    fp.unlink(missing_ok=True)
                     RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
                     return
                 elif toppings.value <= 0:
@@ -228,7 +227,6 @@ class Inventory(Cog, description="View and update your topping inventory"):
                         description=["Parsing error when reading topping video", "Please contact the admin"],
                         footer=f"admin: @{(await ctx.bot.application_info()).owner}",
                     )
-                    fp.unlink(missing_ok=True)
                     RUNNING_CPU_TASK.pop(ctx.message.author.id, None)
                     return
 
