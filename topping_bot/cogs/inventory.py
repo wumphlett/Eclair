@@ -433,10 +433,11 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
             solution = Value("i", -1)
             shared_memory = SharedMemory(create=True, size=64)
-            full_extraction(fp, topping_fp, shared_memory.name, solution, True, verbose)
             process = Process(
                 target=full_extraction, args=(fp, topping_fp, shared_memory.name, solution, True, verbose)
             )
+
+            process.start()
             while process.is_alive():
                 await edit_msg(
                     msg,
