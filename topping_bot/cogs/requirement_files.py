@@ -79,6 +79,17 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
     @req.command(aliases=["v"], brief="View", description="View a requirements file")
     async def view(self, ctx):
         options = await filter_requirements_files(ctx)
+        if len(options) == 0:
+            await send_msg(
+                ctx,
+                title="Err: No Requirements Files",
+                description=[
+                    "You have not uploaded a requirement file",
+                    "Please use !req upload <attch file> to specify a team to optimize",
+                    "Use !req help to learn more",
+                ],
+            )
+            return
 
         reqs_view = RequirementView()
         await reqs_view.start(ctx, options, "What requirement file do you want to view?")
