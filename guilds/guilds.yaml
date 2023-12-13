@@ -190,7 +190,7 @@ dark-cacao:
       - 1096970664176525422
     emoji: 🌿
     icon: null
-    rank: 1
+    rank: 2
     optimizer: True
   - name: Nigiri
     server: 891943428424888391
@@ -199,7 +199,16 @@ dark-cacao:
       - 1096970748792418304
     emoji: 🍣
     icon: null
-    rank: 2
+    rank: 13
+    optimizer: True
+  - name: Peppermint
+    server: 891943428424888391
+    role: 965724837601497159
+    channels:
+      - 1184391572171804682
+    emoji: 🍬
+    icon: null
+    rank: 19
     optimizer: True
   - name: TimeRift
     server: 992691459427934260
@@ -208,7 +217,7 @@ dark-cacao:
       - 1097799936789188608
     emoji: ⏰
     icon: null
-    rank: 3
+    rank: 26
     optimizer: True
 arena: []
 special:
@@ -230,6 +239,16 @@ special:
       - 1184382682277363792
     mod: 1182417297231581325
     emoji: 🐲
+    icon: null
+    rank: null
+    optimizer: True
+  - name: Whisktakers
+    server: 809853639765262366
+    role: 809857287283277844
+    channels:
+      - 1184390259140739125
+    mod: 1182417297231581325
+    emoji: 🌇
     icon: null
     rank: null
     optimizer: True
