@@ -66,7 +66,11 @@ class Objective:
 
 
 class Special(Objective, ABC):
-    pass
+    bounds = None
+
+    def __init__(self, *args, **kwargs):
+        self.bounds = {substat: float("inf") for substat in self.types}
+        super().__init__(*args, **kwargs)
 
 
 class Combo(Special):
@@ -109,10 +113,6 @@ class EDMG(Special):
         self.base_atk, self.base_crit = modifiers[Type.ATK], modifiers[Type.CRIT]
         self.crit_dmg = modifiers[Type.CRIT_DMG] / Decimal("100")
         self.mult = modifiers[Type.ATK_MULT]
-        self.bounds = {
-            Type.ATK: {"max": float("inf"), "min": float("-inf")},
-            Type.CRIT: {"max": float("inf"), "min": float("-inf")},
-        }
         super().__init__(substat=Type.E_DMG)
 
     @property
@@ -130,6 +130,7 @@ class EDMG(Special):
 
     def upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
         """Maximum E[DMG] possible given combined atk/crit pool"""
+        # base_pool = self.base_atk + self.base_crit
         combined = (combined + self.base_atk + self.base_crit) / Decimal("100")
 
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
@@ -139,13 +140,17 @@ class EDMG(Special):
             combo.value(Type.CRIT) + self.base_crit
         ) / Decimal("100")
 
-        # ideal_possible_atk = max(atk, optimal_atk)
-        # ideal_possible_crit = combined - ideal_possible_atk
+        ideal_possible_atk = max(atk, optimal_atk)
+        ideal_possible_crit = combined - ideal_possible_atk
+
+        # ideal_possible_atk = min(ideal_possible_atk - self.base_atk / Decimal(100), self.bounds[Type.ATK])
+        # ideal_possible_crit = min(ideal_possible_crit - self.base_crit / Decimal(100), self.bounds[Type.CRIT])
+        # ideal_possible_atk =
 
         # TODO remove outer max, should be handled by best combined valid case
-        ideal_possible_atk = min(max(atk, optimal_atk), self.bounds[Type.ATK]["max"])
-        ideal_possible_crit = min(combined - ideal_possible_atk, self.bounds[Type.CRIT]["max"])
-        ideal_possible_atk = combined - ideal_possible_crit
+        # ideal_possible_atk = min(max(atk, optimal_atk), self.bounds[Type.ATK])
+        # ideal_possible_crit = min(combined - ideal_possible_atk, self.bounds[Type.CRIT])
+        # ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
 

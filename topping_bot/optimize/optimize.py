@@ -10,6 +10,7 @@ from typing import Callable, List, Tuple, Union
 from tqdm import tqdm
 
 from topping_bot.crk.toppings import INFO, Topping, ToppingSet, Type
+from topping_bot.optimize.objectives import Special
 from topping_bot.optimize.requirements import Requirements
 
 
@@ -71,25 +72,12 @@ class Optimizer:
             self.toppings.remove(best_dmgres_top)
             self.toppings.insert(0, best_dmgres_top)
 
-        if self.reqs.objective.type in (Type.E_DMG,):  # TODO Extend this logic into Vitality
+        if issubclass(self.reqs.objective, Special):
             for req in self.reqs.ceiling_reqs():
                 substat, required = req.substat, req.target
-                if self.reqs.objective.bounds.get(substat):
-                    if self.reqs.objective.bounds[substat]["max"] == float("-inf"):
-                        self.reqs.objective.bounds[substat]["max"] = required / Decimal("100")
-                    else:
-                        self.reqs.objective.bounds[substat]["max"] = min(
-                            self.reqs.objective.bounds[substat]["max"], required / Decimal("100")
-                        )
-            for req in self.reqs.floor_reqs():
-                substat, required = req.substat, req.target
-                if self.reqs.objective.bounds.get(substat):
-                    if self.reqs.objective.bounds[substat]["min"] == float("inf"):
-                        self.reqs.objective.bounds[substat]["min"] = required / Decimal("100")
-                    else:
-                        self.reqs.objective.bounds[substat]["min"] = min(
-                            self.reqs.objective.bounds[substat]["min"], required / Decimal("100")
-                        )
+                self.reqs.objective.bounds[substat] = min(
+                    self.reqs.objective.bounds[substat], required / Decimal("100")
+                )
 
         yield from self._dfs([], 0)
 
