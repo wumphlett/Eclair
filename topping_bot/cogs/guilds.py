@@ -225,7 +225,9 @@ class Guilds(Cog, description="The guild commands available to you"):
             server_info["utility"]["error-msgs"] = error_msg_channel
 
         tracked_roles = {
-            guild.name: guild for guild in Guild.supported if (not guild.is_special or server == CONFIG["community"]["dev-server"]) and guild.server != server
+            guild.name: guild
+            for guild in Guild.supported
+            if (not guild.is_special or server == CONFIG["community"]["dev-server"]) and guild.server != server
         }
         mirrored_roles = set(server_info["roles"].keys())
 

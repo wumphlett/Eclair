@@ -109,6 +109,10 @@ class EDMG(Special):
         self.base_atk, self.base_crit = modifiers[Type.ATK], modifiers[Type.CRIT]
         self.crit_dmg = modifiers[Type.CRIT_DMG] / Decimal("100")
         self.mult = modifiers[Type.ATK_MULT]
+        self.bounds = {
+            Type.ATK: {"max": float("inf"), "min": float("-inf")},
+            Type.CRIT: {"max": float("inf"), "min": float("-inf")},
+        }
         super().__init__(substat=Type.E_DMG)
 
     @property
@@ -135,8 +139,13 @@ class EDMG(Special):
             combo.value(Type.CRIT) + self.base_crit
         ) / Decimal("100")
 
-        ideal_possible_atk = max(atk, optimal_atk)
-        ideal_possible_crit = combined - ideal_possible_atk
+        # ideal_possible_atk = max(atk, optimal_atk)
+        # ideal_possible_crit = combined - ideal_possible_atk
+
+        # TODO remove outer max, should be handled by best combined valid case
+        ideal_possible_atk = min(max(atk, optimal_atk), self.bounds[Type.ATK]["max"])
+        ideal_possible_crit = min(combined - ideal_possible_atk, self.bounds[Type.CRIT]["max"])
+        ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
 

@@ -256,6 +256,22 @@ cookies:
       - CC
       - Clotted
       - Clot
+#  Crème Brûlée:
+#    id: 593
+#    rarity: Epic
+#    type: Ranged
+#    position: Rear
+#    cd: 9
+#    aliases:
+#      - Creme Brulee
+#      - Brulee
+#  Linzer:
+#    id: 592
+#    rarity: Epic
+#    type: Support
+#    position: Rear
+#    cd: 16
+#    aliases: []
   Olive:
     id: 590
     rarity: Epic
