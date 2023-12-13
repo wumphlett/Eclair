@@ -85,7 +85,11 @@ class Guilds(Cog, description="The guild commands available to you"):
             owner = (await self.bot.application_info()).owner
             server_info = Guild.load_subscribed_server_info(member.guild.id)
 
-            for guild in (guild for guild in Guild.supported if not guild.is_special):
+            for guild in (
+                guild
+                for guild in Guild.supported
+                if (not guild.is_special or member.guild.id == CONFIG["community"]["dev-server"])
+            ):
                 tracked_server = self.bot.get_guild(guild.server)
                 if tracked_server is None:
                     await owner.send(
@@ -221,7 +225,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             server_info["utility"]["error-msgs"] = error_msg_channel
 
         tracked_roles = {
-            guild.name: guild for guild in Guild.supported if not guild.is_special and guild.server != server
+            guild.name: guild for guild in Guild.supported if (not guild.is_special or server == CONFIG["community"]["dev-server"]) and guild.server != server
         }
         mirrored_roles = set(server_info["roles"].keys())
 
@@ -250,12 +254,12 @@ class Guilds(Cog, description="The guild commands available to you"):
 
         async def reorder_roles():
             role_order = []
-            await asyncio.sleep(3) # need time to let created roles propagate
+            await asyncio.sleep(3)  # need time to let created roles propagate
             full_role_list = await subscribed_server.fetch_roles()
             full_roles = {server_role.id: server_role for server_role in full_role_list}
             for guild in Guild.supported:
                 if (
-                    not guild.is_special
+                    (not guild.is_special or server == CONFIG["community"]["dev-server"])
                     and server_info["roles"].get(guild.name)
                     and full_roles.get(server_info["roles"][guild.name])
                 ):
@@ -263,7 +267,7 @@ class Guilds(Cog, description="The guild commands available to you"):
             role_positions = {matched_role: index_role.position - i - 1 for i, matched_role in enumerate(role_order)}
             idx = index_role.position - len(role_positions) - 1
             full_role_list.sort(key=lambda x: -x.position)
-            for existing_role in full_role_list[full_role_list.index(index_role)+1:]:
+            for existing_role in full_role_list[full_role_list.index(index_role) + 1 :]:
                 if existing_role not in role_positions:
                     role_positions[existing_role] = idx
                     idx -= 1
@@ -295,7 +299,8 @@ class Guilds(Cog, description="The guild commands available to you"):
         owner = (await self.bot.application_info()).owner
 
         # tracked guilds
-        for guild in (guild for guild in Guild.supported if not guild.is_special):
+        # for guild in (guild for guild in Guild.supported if not guild.is_special):
+        for guild in Guild.supported:
             server = self.bot.get_guild(guild.server)
             if server is None:
                 await owner.send(
@@ -326,6 +331,9 @@ class Guilds(Cog, description="The guild commands available to you"):
 
             for guild, members in tracked_members.items():
                 if guild.server == server:
+                    continue
+
+                if guild.is_special and server != CONFIG["community"]["dev-server"]:
                     continue
 
                 if subscribed_server.get_role(mirrored_roles[guild.name]) is None:
