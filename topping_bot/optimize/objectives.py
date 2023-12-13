@@ -66,7 +66,11 @@ class Objective:
 
 
 class Special(Objective, ABC):
-    pass
+    bounds = None
+
+    def __init__(self, *args, **kwargs):
+        self.bounds = {substat: float("inf") for substat in self.types}
+        super().__init__(*args, **kwargs)
 
 
 class Combo(Special):
@@ -106,7 +110,7 @@ class Combo(Special):
 
 class EDMG(Special):
     def __init__(self, modifiers: dict):
-        self.base_atk, self.base_crit = modifiers[Type.ATK], modifiers[Type.CRIT]
+        self.base_atk, self.base_crit = modifiers[Type.ATK] / Decimal("100"), modifiers[Type.CRIT] / Decimal("100")
         self.crit_dmg = modifiers[Type.CRIT_DMG] / Decimal("100")
         self.mult = modifiers[Type.ATK_MULT]
         super().__init__(substat=Type.E_DMG)
@@ -119,24 +123,34 @@ class EDMG(Special):
     @cache
     def value(self, topping_set: ToppingSet):
         """E[DMG] of a given topping set"""
-        atk = (topping_set.value(Type.ATK) + self.base_atk) / Decimal("100")
-        crit = (topping_set.value(Type.CRIT) + self.base_crit) / Decimal("100")
+        atk = topping_set.value(Type.ATK) / Decimal("100") + self.base_atk
+        crit = topping_set.value(Type.CRIT) / Decimal("100") + self.base_crit
 
         return self.e_dmg(atk, crit)
 
     def upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
         """Maximum E[DMG] possible given combined atk/crit pool"""
-        combined = (combined + self.base_atk + self.base_crit) / Decimal("100")
+        # base_pool = self.base_atk + self.base_crit
+        combined = combined / Decimal("100") + self.base_atk + self.base_crit
 
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
 
         combo = ToppingSet(combo)
-        atk, crit = (combo.value(Type.ATK) + self.base_atk) / Decimal("100"), (
-            combo.value(Type.CRIT) + self.base_crit
-        ) / Decimal("100")
+        atk, crit = (
+            combo.value(Type.ATK) / Decimal("100") + self.base_atk,
+            combo.value(Type.CRIT) / Decimal("100") + self.base_crit,
+        )
 
-        ideal_possible_atk = max(atk, optimal_atk)
-        ideal_possible_crit = combined - ideal_possible_atk
+        # ideal_possible_atk = max(atk, optimal_atk)
+        # ideal_possible_crit = max(combined - ideal_possible_atk, crit)
+        # ideal_possible_atk = combined - ideal_possible_crit
+
+        # BEST THEORY
+        ideal_possible_atk = min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]) + self.base_atk
+        ideal_possible_crit = (
+            min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]) + self.base_crit
+        )
+        ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
 
@@ -148,14 +162,14 @@ class EDMG(Special):
         minimum_atk = Decimal(math.sqrt(obj / (self.crit_dmg - 1)))
         minimum_crit = (obj - (1 + self.mult) * minimum_atk) / ((self.crit_dmg - 1) * minimum_atk)
 
-        return ((minimum_atk + minimum_crit) * Decimal(100) - self.base_atk - self.base_crit).quantize(
+        return ((minimum_atk + minimum_crit - self.base_atk - self.base_crit) * Decimal(100)).quantize(
             Decimal(".1"), rounding=ROUND_UP
         )
 
     def fancy_value(self, topping_set: ToppingSet):
         crit = min(
             Decimal(1),
-            (topping_set.raw(Type.CRIT) + topping_set.set_effect(Type.CRIT)[1] + self.base_crit) / Decimal(100),
+            (topping_set.raw(Type.CRIT) + topping_set.set_effect(Type.CRIT)[1]) / Decimal(100) + self.base_crit,
         )
         rng = math.sqrt(crit * (1 - crit))
         return {Type.E_DMG: self.value(topping_set) * 100, Type.RNG: rng * 200}

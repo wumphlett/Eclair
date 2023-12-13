@@ -95,6 +95,11 @@ class Requirements:
 
     @property
     @cache
+    def unfiltered_valid_substats(self):
+        return tuple(req.substat for req in self.valid if req.op.str == ">=")
+
+    @property
+    @cache
     def objective_substats(self):
         return self.objective.types
 

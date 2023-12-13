@@ -10,6 +10,7 @@ from typing import Callable, List, Tuple, Union
 from tqdm import tqdm
 
 from topping_bot.crk.toppings import INFO, Topping, ToppingSet, Type
+from topping_bot.optimize.objectives import Special
 from topping_bot.optimize.requirements import Requirements
 
 
@@ -70,6 +71,13 @@ class Optimizer:
             )
             self.toppings.remove(best_dmgres_top)
             self.toppings.insert(0, best_dmgres_top)
+
+        if isinstance(self.reqs.objective, Special):
+            for req in self.reqs.ceiling_reqs():
+                substat, required = req.substat, req.target
+                self.reqs.objective.bounds[substat] = min(
+                    self.reqs.objective.bounds[substat], required / Decimal("100")
+                )
 
         yield from self._dfs([], 0)
 
@@ -150,7 +158,7 @@ class Optimizer:
                 continue
             if Prune.COMBINED_VALID_FAILURE in reason:
                 valid_plane = self.reqs.objective.update_valid_plane(
-                    valid_plane, self.toppings[i], self.reqs.valid_substats
+                    valid_plane, self.toppings[i], self.reqs.unfiltered_valid_substats
                 )
             if Prune.COMBINED_OBJECTIVE_FAILURE in reason:
                 obj_plane = self.reqs.objective.update_obj_plane(
@@ -397,11 +405,11 @@ class Optimizer:
         return None
 
     def _best_combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_set = self._best_combined_case(combo, toppings, set_reqs, self.reqs.valid_substats)
+        full_set = self._best_combined_case(combo, toppings, set_reqs, self.reqs.unfiltered_valid_substats)
 
         if full_set is not None:
-            return full_set.value(self.reqs.valid_substats) - sum(
-                self.reqs.floor(substat) for substat in self.reqs.valid_substats
+            return full_set.value(self.reqs.unfiltered_valid_substats) - sum(
+                self.reqs.floor(substat) for substat in self.reqs.unfiltered_valid_substats
             )
         return None
 

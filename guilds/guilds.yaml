@@ -189,7 +189,7 @@ dark-cacao:
     channels:
       - 1096970664176525422
     emoji: 🌿
-    icon: null
+    icon: 8
     rank: 2
     optimizer: True
   - name: Nigiri
@@ -198,7 +198,7 @@ dark-cacao:
     channels:
       - 1096970748792418304
     emoji: 🍣
-    icon: null
+    icon: 20
     rank: 13
     optimizer: True
   - name: Peppermint
@@ -207,7 +207,7 @@ dark-cacao:
     channels:
       - 1184391572171804682
     emoji: 🍬
-    icon: null
+    icon: 2
     rank: 19
     optimizer: True
   - name: TimeRift
@@ -216,7 +216,7 @@ dark-cacao:
     channels:
       - 1097799936789188608
     emoji: ⏰
-    icon: null
+    icon: 16
     rank: 26
     optimizer: True
 arena: []
@@ -247,8 +247,16 @@ special:
     role: 809857287283277844
     channels:
       - 1184390259140739125
-    mod: 1182417297231581325
     emoji: 🌇
+    icon: null
+    rank: null
+    optimizer: True
+  - name: Nestle
+    server: 928304698304376833
+    role: 1079005811197607956
+    channels:
+      - 1184536458976051200
+    emoji: ☕
     icon: null
     rank: null
     optimizer: True
