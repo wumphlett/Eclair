@@ -72,7 +72,7 @@ class Optimizer:
             self.toppings.remove(best_dmgres_top)
             self.toppings.insert(0, best_dmgres_top)
 
-        if issubclass(self.reqs.objective, Special):
+        if isinstance(self.reqs.objective, Special):
             for req in self.reqs.ceiling_reqs():
                 substat, required = req.substat, req.target
                 self.reqs.objective.bounds[substat] = min(
