@@ -29,7 +29,7 @@ async def entrap_errors(throwable_function: Callable, on_error_function: Callabl
     try:
         await throwable_function()
     except:
-        traceback.print_exc()
+        # traceback.print_exc()
         with contextlib.suppress(Exception):
             await on_error_function()
 
