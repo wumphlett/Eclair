@@ -229,6 +229,9 @@ class Optimizer:
             if combined is None or combined < 0:
                 failures |= Prune.COMBINED_UNFILTERED_VALID_FAILURE
 
+            if failures != Prune.NONE:
+                return failures
+
         # check objective requirements
         if self.solution and len(combo) != 5:
             if self.reqs.objective.type == Type.E_DMG:
