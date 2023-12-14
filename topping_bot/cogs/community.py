@@ -401,26 +401,15 @@ class Community(Cog, description="Helper commands available to all!"):
         gacha = Gacha.load_history(ctx.message.author.id)
         fp = cookie_to_image(cookie, gacha, ctx.message.author.id)
 
-        image = discord.File(fp, filename=f"{cookie.name.lower().replace(' ', '')}.png")
+        image = discord.File(fp, filename=f"{fp.stem}.png")
         embed = await new_embed(
-            image=f"attachment://{cookie.name.lower().replace(' ', '')}.png",
+            image=f"attachment://{fp.stem}.png",
             footer=None if gacha.is_unlocked(pk=str(cookie.id)) else "Unlock with /gacha pull",
             thumbnail=False,
         )
 
         await ctx.reply(embed=embed, file=image)
         fp.unlink(missing_ok=True)
-
-        # await send_msg(
-        #     ctx,
-        #     title=f"{cookie.name} Cookie",
-        #     description=[
-        #         f"rarity: {cookie.rarity.value}",
-        #         f"type: {cookie.type.value}",
-        #         f"position: {cookie.position.value}",
-        #     ],
-        #     thumbnail=cookie.card,
-        # )
 
     @cooldown(1, 1, BucketType.user)
     @commands.hybrid_command(aliases=["t"], brief="Treasure info", description="View treasure info at a given lvl")

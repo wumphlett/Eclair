@@ -51,7 +51,9 @@ def approved_guild_ctx(ctx, member_id=None):
             server = ctx.bot.get_guild(guild.server)
             if member_id == ctx.bot.owner_id:
                 return guild
-            elif (member := server.get_member(member_id)) is not None and member.get_role(guild.role):
+            elif (member := server.get_member(member_id)) is not None and (
+                member.get_role(guild.role) or any(member.get_role(role) for role in guild.roles)
+            ):
                 return guild
         if member_id == ctx.bot.owner_id:
             for guild in Guild.supported:
@@ -61,7 +63,9 @@ def approved_guild_ctx(ctx, member_id=None):
     else:
         for guild in Guild.optimizers:
             member = ctx.bot.get_guild(guild.server).get_member(member_id)
-            if member is not None and member.get_role(guild.role):
+            if member is not None and (
+                member.get_role(guild.role) or any(member.get_role(role) for role in guild.roles)
+            ):
                 return guild
 
 

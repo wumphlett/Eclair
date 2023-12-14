@@ -14,7 +14,7 @@ COLORS = {
     "hollyberry": Color.magenta(),
     "dark-cacao": Color.purple(),
     "arena": Color.blue(),
-    "special": Color.orange(),
+    "special": Color.brand_red(),
 }
 
 
@@ -27,7 +27,8 @@ class Guild:
     def __init__(self, group, **kwargs):
         self.name = kwargs["name"]
         self.server = kwargs["server"]
-        self.role = kwargs["role"]
+        self.role = kwargs.get("role", 0)
+        self.roles = kwargs.get("roles", [])
         self.channels = kwargs.get("channels", [])
         self.mod = kwargs.get("mod", CONFIG["optimizer"]["default-mod"])
         self.emoji = kwargs["emoji"]
