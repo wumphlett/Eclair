@@ -234,7 +234,7 @@ class Vitality(Special):
 
     @staticmethod
     def init_planes():
-        return float("-inf"), [], []
+        return float("-inf"), float("-inf"), [], []
 
     @staticmethod
     def obj_cut(obj_plane: List, topping: Topping, obj_substats: Iterable[Type]):
