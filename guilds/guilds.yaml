@@ -223,6 +223,7 @@ arena: []
 special:
   - name: Optimizers
     server: 1090949984356159538
+    role: 1091054770615238676
     roles:
       - 1091054770615238676 # Optimizer
       - 1095764447315906611 # Booster
