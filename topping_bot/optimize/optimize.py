@@ -75,9 +75,10 @@ class Optimizer:
         if isinstance(self.reqs.objective, Special):
             for req in self.reqs.ceiling_reqs():
                 substat, required = req.substat, req.target
-                self.reqs.objective.bounds[substat] = min(
-                    self.reqs.objective.bounds[substat], required / Decimal("100")
-                )
+                if self.reqs.objective.bounds.get(substat):
+                    self.reqs.objective.bounds[substat] = min(
+                        self.reqs.objective.bounds[substat], required / Decimal("100")
+                    )
 
         yield from self._dfs([], 0)
 
