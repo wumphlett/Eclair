@@ -130,8 +130,10 @@ class Requirements:
     def non_objective_count(self, topping_set: ToppingSet):
         return sum(1 for topping in topping_set.toppings if topping.flavor not in self.objective_substats)
 
-    def cut_topping(self, topping, valid_plane, obj_plane, all_plane):
+    def cut_topping(self, topping, valid_plane, unfiltered_valid_plane, obj_plane, all_plane):
         if self.objective.valid_cut(valid_plane, topping, self.valid_substats):
+            return True
+        if self.objective.valid_cut(unfiltered_valid_plane, topping, self.unfiltered_valid_substats):
             return True
         if self.objective.obj_cut(obj_plane, topping, self.objective_substats):
             return True

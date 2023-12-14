@@ -20,6 +20,7 @@ class Prune(Flag):
     SIMPLE_OBJECTIVE_FAILURE = auto()
     CONFLICTING_REQUIREMENTS_FAILURE = auto()
     COMBINED_VALID_FAILURE = auto()
+    COMBINED_UNFILTERED_VALID_FAILURE = auto()
     COMBINED_OBJECTIVE_FAILURE = auto()
     COMBINED_ALL_FAILURE = auto()
 
@@ -147,10 +148,10 @@ class Optimizer:
         if idx == len(self.toppings):
             return
 
-        valid_plane, obj_plane, all_plane = self.reqs.objective.init_planes()
+        valid_plane, unfiltered_valid_plane, obj_plane, all_plane = self.reqs.objective.init_planes()
 
         for i in range(idx, len(self.toppings)):
-            if self.reqs.cut_topping(self.toppings[i], valid_plane, obj_plane, all_plane):
+            if self.reqs.cut_topping(self.toppings[i], valid_plane, unfiltered_valid_plane, obj_plane, all_plane):
                 continue
 
             reason = yield from self._dfs(combo + [self.toppings[i]], i + 1)
@@ -159,7 +160,11 @@ class Optimizer:
                 continue
             if Prune.COMBINED_VALID_FAILURE in reason:
                 valid_plane = self.reqs.objective.update_valid_plane(
-                    valid_plane, self.toppings[i], self.reqs.unfiltered_valid_substats
+                    valid_plane, self.toppings[i], self.reqs.valid_substats
+                )
+            if Prune.COMBINED_UNFILTERED_VALID_FAILURE in reason:
+                unfiltered_valid_plane = self.reqs.objective.update_valid_plane(
+                    unfiltered_valid_plane, self.toppings[i], self.reqs.unfiltered_valid_substats
                 )
             if Prune.COMBINED_OBJECTIVE_FAILURE in reason:
                 obj_plane = self.reqs.objective.update_obj_plane(
@@ -209,13 +214,22 @@ class Optimizer:
         if sum(count for count in overall_set_requirements.values()) > 5 - len(combo):
             return Prune.CONFLICTING_REQUIREMENTS_FAILURE
 
+        failures = Prune.NONE
+
         if self.solution and self.reqs.valid and len(combo) != 5:
-            combined = self._best_combined_valid_case(combo, toppings, overall_set_requirements)
+            combined = self._best_combined_valid_case(
+                combo, toppings, overall_set_requirements, self.reqs.valid_substats
+            )
             if combined is None or combined < 0:
-                return Prune.COMBINED_VALID_FAILURE
+                failures |= Prune.COMBINED_VALID_FAILURE
+
+            combined = self._best_combined_valid_case(
+                combo, toppings, overall_set_requirements, self.reqs.unfiltered_valid_substats
+            )
+            if combined is None or combined < 0:
+                failures |= Prune.COMBINED_UNFILTERED_VALID_FAILURE
 
         # check objective requirements
-        failures = Prune.NONE
         if self.solution and len(combo) != 5:
             if self.reqs.objective.type == Type.E_DMG:
                 mutable_set_reqs = overall_set_requirements.copy()
@@ -405,13 +419,13 @@ class Optimizer:
             return full_set
         return None
 
-    def _best_combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_set = self._best_combined_case(combo, toppings, set_reqs, self.reqs.unfiltered_valid_substats)
+    def _best_combined_valid_case(
+        self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: List[Type]
+    ):
+        full_set = self._best_combined_case(combo, toppings, set_reqs, substats)
 
         if full_set is not None:
-            return full_set.value(self.reqs.unfiltered_valid_substats) - sum(
-                self.reqs.floor(substat) for substat in self.reqs.unfiltered_valid_substats
-            )
+            return full_set.value(substats) - sum(self.reqs.floor(substat) for substat in substats)
         return None
 
     def _best_combined_all_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
