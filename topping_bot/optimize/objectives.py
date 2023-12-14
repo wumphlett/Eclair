@@ -34,7 +34,7 @@ class Objective:
 
     @staticmethod
     def init_planes():
-        return float("-inf"), float("-inf"), []
+        return float("-inf"), float("-inf"), float("-inf"), []
 
     @staticmethod
     def valid_cut(valid_plane: float, topping: Topping, valid_substats: Iterable[Type]):
