@@ -262,6 +262,7 @@ special:
     role: 1079005811197607956
     channels:
       - 1184536458976051200
+      - 1084736756039036998 # Custom Server Channel
     emoji: ☕
     icon: null
     rank: null
