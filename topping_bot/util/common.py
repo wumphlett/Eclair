@@ -22,6 +22,8 @@ def moderator_only(ctx, member_id=None):
     return guild and (
         DEBUG
         or ctx.message.author.id == ctx.bot.owner_id
+        # TODO mod roles need to become a server & role pair
+        or bool(ctx.guild.get_member(ctx.message.author.id).get_role(guild.mod))
         or bool(ctx.bot.get_guild(guild.server).get_member(ctx.message.author.id).get_role(guild.mod))
     )
 
