@@ -168,7 +168,7 @@ class Topping:
         return self.__str__()
 
     def __eq__(self, other):
-        return self.substats == other.substats
+        return self.substats == other.substats and self.resonance == other.resonance
 
     def __hash__(self):
         return id(self)
