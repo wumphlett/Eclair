@@ -267,6 +267,7 @@ cookies:
     aliases:
       - Creme Brulee
       - Brulee
+      - Creme
   Linzer:
     id: 592
     rarity: Epic
@@ -325,6 +326,7 @@ cookies:
     aliases:
       - Pep
       - PPM
+      - Mint
   Black Lemonade:
     id: 581
     rarity: Epic
