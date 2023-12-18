@@ -61,7 +61,7 @@ class Cutter:
             )
         if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
             planes[Prune.COMBINED_SPECIAL_ALL_FAILURE].append(
-                tuple(topping.value(self.reqs.valid_substats))
+                (topping.value(self.reqs.valid_substats),)
                 + tuple(topping.value(s) for s in self.reqs.objective.types)
             )
 
