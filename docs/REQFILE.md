@@ -38,6 +38,7 @@ Objective requirements define a goal to achieve with the cookie's stats:
 - **Objective**: Specify a goal with a substat.
 - **Special**: Include special requirements with relevant information.
   - `E[DMG]`: Combines CRIT% and ATK.
+  - `Vitality`: Combines DMG Resistance and HP.
   - `Combo`: Combines multiple substats.
 
 ## Modifiers
