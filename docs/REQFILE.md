@@ -16,7 +16,7 @@
 2. **Optimizing Using User's Topping Inventory**: Moderators have the capability to optimize configurations using the topping inventory of other users.
 
 ### Copying Requirement Files
-1. **Copying Files**: Moderators can copy requirement files between users, ensuring efficient management and sharing of configurations within the guild.
+1. **Copying Files**: Moderators can copy requirement files from their own personal files to different users.
 
 ### Code Implementation
 - Checks for `moderator_only` ensure these actions are performed securely and appropriately within the bot's framework.
