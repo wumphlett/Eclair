@@ -37,8 +37,8 @@ Validity requirements specify the conditions that must be met for a cookie to be
 Objective requirements define a goal to achieve with the cookie's stats:
 - **Objective**: Specify a goal with a substat.
 - **Special**: Include special requirements with relevant information.
-  - `E[DMG]`: Combines CRIT% and ATK.
-  - `Vitality`: Combines DMG Resistance and HP.
+  - `E[DMG]`: Calculated ideal balance between ATK and CRIT% to maximize the expected damage.
+  - `Vitality`: Calculated ideal balance between DMG Resistance and HP to minimize damage taken.
   - `Combo`: Combines multiple substats.
 
 ## Modifiers
@@ -48,9 +48,10 @@ Modifiers allow the inclusion of additional factors that affect the final statis
 - **Specification**: Each modifier should specify its source and value.
 
 ## Discord Commands
+*Note that only a mod will need to use the optional `[user]` argument. Normal users will default these commands to be performed on themselves.*
 - **Upload a file**: `!req upload`
   - Attach your .yaml file to the Discord message.
-  - Use `!req upload [user]` to upload a file for someone else. If no user is specified, it will automatically add the reqfile to you.
+  - Use `!req upload [user]`
 - **View files**: `!req view`
   - Displays all of your uploaded requirement files.
 - **Copy a file**: `!req copy [user]`
@@ -65,8 +66,10 @@ Modifiers allow the inclusion of additional factors that affect the final statis
 - **Download default**: `!req def download`
 - **Delete default**: `!req def delete`
 
-## Example
 
+## Example
+*Requirements in this example have a cookie's base ATK% buff, calculable with `!basestat <before> <after> [diff]`*
+- See `!help basestat` for more information.
 ```yaml
 example1.yaml
 cookies:
