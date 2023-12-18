@@ -9,6 +9,18 @@
 4. Requirements are specified under each cookie in a **yaml file**.
 5. Each cookie can accept a collection of **validity requirements** and one **objective requirement**.
 
+## Bot Moderator Permissions and Capabilities
+
+### Actions on Behalf of Others
+1. **Uploading Requirements for Users**: Moderators can upload requirement files directly into other users' inventories.
+2. **Optimizing Using User's Topping Inventory**: Moderators have the capability to optimize configurations using the topping inventory of other users.
+
+### Copying Requirement Files
+1. **Copying Files**: Moderators can copy requirement files between users, ensuring efficient management and sharing of configurations within the guild.
+
+### Code Implementation
+- Checks for `moderator_only` ensure these actions are performed securely and appropriately within the bot's framework.
+
 ## Validity
 Validity requirements specify the conditions that must be met for a cookie to be considered valid:
 - **Simple**: Compare a substat to a benchmark. 
