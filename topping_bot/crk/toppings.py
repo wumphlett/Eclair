@@ -174,7 +174,6 @@ class Topping:
     def __eq__(self, other):
         return self.substats == other.substats and self.resonance == other.resonance
 
-
     def __hash__(self):
         return id(self)
 
