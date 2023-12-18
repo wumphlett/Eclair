@@ -5,8 +5,13 @@ from heapq import nlargest
 import math
 from typing import Iterable, List
 
+from tqdm import tqdm
+
 
 from topping_bot.crk.toppings import Topping, ToppingSet, Type
+
+
+# TODO floor/upper revamp for all reqs, not just EDMG
 
 
 class Objective:
@@ -32,44 +37,12 @@ class Objective:
     def fancy_value(self, topping_set: ToppingSet):
         return {self.type: self.value(topping_set)}
 
-    @staticmethod
-    def init_planes():
-        return float("-inf"), float("-inf"), float("-inf"), []
-
-    @staticmethod
-    def valid_cut(valid_plane: float, topping: Topping, valid_substats: Iterable[Type]):
-        return topping.value(valid_substats) <= valid_plane
-
-    @staticmethod
-    def obj_cut(obj_plane: float, topping: Topping, obj_substats: Iterable[Type]):
-        return topping.value(obj_substats) <= obj_plane
-
-    @staticmethod
-    def all_cut(all_plane: List, topping: Topping, valid_substats, obj_substats, all_substats):
-        return any(
-            topping.value(valid_substats) <= min_val and topping.value(all_substats) <= min_all
-            for min_val, min_all in all_plane
-        )
-
-    @staticmethod
-    def update_valid_plane(valid_plane: float, topping: Topping, valid_substats: Iterable[Type]):
-        return max(valid_plane, topping.value(valid_substats))
-
-    @staticmethod
-    def update_obj_plane(obj_plane: float, topping: Topping, obj_substats: Iterable[Type]):
-        return max(obj_plane, topping.value(obj_substats))
-
-    @staticmethod
-    def update_all_plane(all_plane: List, topping: Topping, valid_substats, obj_substats, all_substats):
-        all_plane.append((topping.value(valid_substats), topping.value(all_substats)))
-        return all_plane
-
 
 class Special(Objective, ABC):
     bounds = None
 
     def __init__(self, *args, **kwargs):
-        self.bounds = {substat: float("inf") for substat in self.types}
+        self.bounds = {substat: {"max": float("inf"), "min": float("-inf")} for substat in self.types}
         super().__init__(*args, **kwargs)
 
 
@@ -86,10 +59,6 @@ class Combo(Special):
     @cache
     def value(self, topping_set: ToppingSet):
         """Combined value of valued substats"""
-        # actual = np.asarray([float(topping_set.value(substat)) for substat in self.objectives])
-        # if sum(actual) != 0:
-        #     return sum(actual) * (1 - self.mae(self.to_probability(actual), self.target))
-        # return 0.
         return sum(topping_set.value(substat) for substat in self.objectives)
 
     @cache
@@ -120,6 +89,9 @@ class EDMG(Special):
     def types(self):
         return tuple((Type.ATK, Type.CRIT))
 
+    def e_dmg(self, atk: Decimal, crit: Decimal):
+        return (self.crit_dmg - 1) * atk * crit + (1 + self.mult) * atk
+
     @cache
     def value(self, topping_set: ToppingSet):
         """E[DMG] of a given topping set"""
@@ -128,28 +100,17 @@ class EDMG(Special):
 
         return self.e_dmg(atk, crit)
 
-    def upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
+    def special_upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
         """Maximum E[DMG] possible given combined atk/crit pool"""
-        # base_pool = self.base_atk + self.base_crit
         combined = combined / Decimal("100") + self.base_atk + self.base_crit
 
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
 
         combo = ToppingSet(combo)
-        atk, crit = (
-            combo.value(Type.ATK) / Decimal("100") + self.base_atk,
-            combo.value(Type.CRIT) / Decimal("100") + self.base_crit,
-        )
+        atk, crit = combo.value(Type.ATK) / Decimal("100") + self.base_atk, combo.value(Type.CRIT) / Decimal("100") + self.base_crit
 
-        # ideal_possible_atk = max(atk, optimal_atk)
-        # ideal_possible_crit = max(combined - ideal_possible_atk, crit)
-        # ideal_possible_atk = combined - ideal_possible_crit
-
-        # BEST THEORY
-        ideal_possible_atk = min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]) + self.base_atk
-        ideal_possible_crit = (
-            min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]) + self.base_crit
-        )
+        ideal_possible_atk = max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"]) + self.base_atk
+        ideal_possible_crit = max(min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]["max"]), self.bounds[Type.CRIT]["min"]) + self.base_crit
         ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
@@ -162,20 +123,12 @@ class EDMG(Special):
         minimum_atk = Decimal(math.sqrt(obj / (self.crit_dmg - 1)))
         minimum_crit = (obj - (1 + self.mult) * minimum_atk) / ((self.crit_dmg - 1) * minimum_atk)
 
-        return ((minimum_atk + minimum_crit - self.base_atk - self.base_crit) * Decimal(100)).quantize(
-            Decimal(".1"), rounding=ROUND_UP
-        )
+        return ((minimum_atk + minimum_crit - self.base_atk - self.base_crit) * Decimal(100)).quantize(Decimal(".1"), rounding=ROUND_UP)
 
     def fancy_value(self, topping_set: ToppingSet):
-        crit = min(
-            Decimal(1),
-            (topping_set.raw(Type.CRIT) + topping_set.set_effect(Type.CRIT)[1]) / Decimal(100) + self.base_crit,
-        )
-        rng = math.sqrt(crit * (1 - crit))
-        return {Type.E_DMG: self.value(topping_set) * 100, Type.RNG: rng * 200}
-
-    def e_dmg(self, atk: Decimal, crit: Decimal):
-        return (self.crit_dmg - 1) * atk * crit + (1 + self.mult) * atk
+        crit = min(Decimal(1), topping_set.value(Type.CRIT) / Decimal(100) + self.base_crit)
+        rng = Decimal(-float(crit) * math.log2(crit) - float(1 - crit) * math.log2(1 - crit)).quantize(Decimal(".001"))
+        return {Type.E_DMG: self.value(topping_set) * 100, Type.RNG: rng * 100}
 
 
 class Vitality(Special):
@@ -188,6 +141,10 @@ class Vitality(Special):
     def types(self):
         return tuple((Type.DMGRES, Type.HP))
 
+    @staticmethod
+    def vitality(hp, dmgres):
+        return hp * (Decimal(1) / (Decimal(1) - dmgres))
+
     @cache
     def value(self, topping_set: ToppingSet):
         """Vitality of a given topping set"""
@@ -196,7 +153,23 @@ class Vitality(Special):
 
         return self.vitality(hp, dmgres)
 
-    def upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
+    def special_upper(self, combined: Decimal, full_set: ToppingSet, combo: List[Topping]):
+        # combined = combined / Decimal("100") + self.base_atk + self.base_crit
+        #
+        # optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
+        #
+        # combo = ToppingSet(combo)
+        # atk, crit = (
+        #     combo.value(Type.ATK) / Decimal("100") + self.base_atk,
+        #     combo.value(Type.CRIT) / Decimal("100") + self.base_crit,
+        # )
+        #
+        # ideal_possible_atk = max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"]) + self.base_atk
+        # ideal_possible_crit = max(min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]["max"]), self.bounds[Type.CRIT]["min"]) + self.base_crit
+        # ideal_possible_atk = combined - ideal_possible_crit
+        #
+        # return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
+
         """Maximum Vitality possible given combined hp/dmgres pool"""
         combo = ToppingSet(combo)
         combined -= combo.value(self.types)
@@ -205,9 +178,7 @@ class Vitality(Special):
         obj_count = len([top for top in full_set.toppings[len(combo.toppings) :] if top.flavor == Type.DMGRES])
 
         _, bonus = full_set.set_effect(Type.DMGRES)
-        max_dmgres = (
-            (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus
-        )
+        max_dmgres = (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus
 
         dmgres += min(combined, max_dmgres)
         hp = (hp + combined - min(combined, max_dmgres) + self.base_hp) / Decimal("100")
@@ -227,37 +198,3 @@ class Vitality(Special):
 
     def fancy_value(self, topping_set: ToppingSet):
         return {Type.VITALITY: self.value(topping_set) * 100}
-
-    @staticmethod
-    def vitality(hp, dmgres):
-        return hp * (Decimal(1) / (Decimal(1) - dmgres))
-
-    @staticmethod
-    def init_planes():
-        return float("-inf"), float("-inf"), [], []
-
-    @staticmethod
-    def obj_cut(obj_plane: List, topping: Topping, obj_substats: Iterable[Type]):
-        return any(
-            topping.value(Type.DMGRES) <= min_dmgres and topping.value(Type.HP) <= min_hp
-            for min_dmgres, min_hp in obj_plane
-        )
-
-    @staticmethod
-    def all_cut(all_plane: List, topping: Topping, valid_substats, obj_substats, all_substats):
-        return any(
-            topping.value(valid_substats) <= min_val
-            and topping.value(Type.DMGRES) <= min_dmgres
-            and topping.value(Type.HP) <= min_hp
-            for min_val, min_dmgres, min_hp in all_plane
-        )
-
-    @staticmethod
-    def update_obj_plane(obj_plane: List, topping: Topping, obj_substats: Iterable[Type]):
-        obj_plane.append((topping.value(Type.DMGRES), topping.value(Type.HP)))
-        return obj_plane
-
-    @staticmethod
-    def update_all_plane(all_plane: List, topping: Topping, valid_substats, obj_substats, all_substats):
-        all_plane.append((topping.value(valid_substats), topping.value(Type.DMGRES), topping.value(Type.HP)))
-        return all_plane

@@ -5,24 +5,14 @@ from decimal import Decimal
 from enum import Flag, auto
 from functools import cache
 from heapq import nlargest, nsmallest
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Iterable, List, Tuple, Union
 
 from tqdm import tqdm
 
-from topping_bot.crk.toppings import INFO, Topping, ToppingSet, Type
+from topping_bot.crk.toppings import INFO, Substats, Topping, ToppingSet, Type
 from topping_bot.optimize.objectives import Special
+from topping_bot.optimize.cutter import Prune, Cutter
 from topping_bot.optimize.requirements import Requirements
-
-
-class Prune(Flag):
-    NONE = auto()
-    SIMPLE_VALID_FAILURE = auto()
-    SIMPLE_OBJECTIVE_FAILURE = auto()
-    CONFLICTING_REQUIREMENTS_FAILURE = auto()
-    COMBINED_VALID_FAILURE = auto()
-    COMBINED_UNFILTERED_VALID_FAILURE = auto()
-    COMBINED_OBJECTIVE_FAILURE = auto()
-    COMBINED_ALL_FAILURE = auto()
 
 
 class Optimizer:
@@ -32,6 +22,7 @@ class Optimizer:
         self.inventory = toppings
         self.reqs = None
         self.solution = None
+        self.cutter = None
         self.toppings = []
         self.cookies = {}
 
@@ -49,402 +40,292 @@ class Optimizer:
         self.reqs.realize(self.cookies)
 
         self.solution = None
+        self.cutter = Cutter(reqs)
 
         # filter out to handle resonant toppings
-        self.toppings = [topping for topping in self.inventory if topping.resonance in reqs.resonance]
+        self.toppings = [t for t in self.inventory if t.resonance in reqs.resonance]
 
         # filter out zero req case
-        self.toppings = [
-            topping for topping in self.toppings if not any(topping.value(zero.substat) for zero in reqs.zero_reqs())
-        ]
-
-        # greedy solution finding
-        self.toppings.sort(key=self._greedy_solution_key)
-        self.solution = self._greedy_solution()
+        self.toppings = [t for t in self.toppings if not any(t.value(zero.substat) for zero in reqs.zero_reqs())]
 
         # presort based on objective requirements to promote finding feasible solution sooner
-        self.toppings.sort(key=self._key)
+        self.toppings.sort(key=self.key)
 
-        # ensuring best dmgres is first topping has significant speedup
+        yield from self.dfs([], 0)
+
+    def key(self, topping: Topping):
         if self.reqs.objective.type == Type.VITALITY:
-            best_dmgres_top = max(
-                self.toppings, key=lambda x: (x.flavor == Type.DMGRES, x.value(self.reqs.all_substats))
+            return (
+                ~(topping.flavor == Type.DMGRES),
+                ~(topping.flavor in self.reqs.objective.types),
+                -len([substat for substat in topping.substats if substat[0] in self.reqs.valid_substats]),
+                -topping.value(self.reqs.all_substats),
             )
-            self.toppings.remove(best_dmgres_top)
-            self.toppings.insert(0, best_dmgres_top)
+        else:
+            return (
+                ~(topping.flavor in self.reqs.objective.types),
+                -len([substat for substat in topping.substats if substat[0] in self.reqs.valid_substats]),
+                -topping.value(self.reqs.all_substats),
+            )
 
-        if isinstance(self.reqs.objective, Special):
-            for req in self.reqs.ceiling_reqs():
-                substat, required = req.substat, req.target
-                if self.reqs.objective.bounds.get(substat):
-                    self.reqs.objective.bounds[substat] = min(
-                        self.reqs.objective.bounds[substat], required / Decimal("100")
-                    )
-
-        yield from self._dfs([], 0)
-
-    def _greedy_solution_key(self, topping: Topping):
-        return (
-            ~(topping.flavor in self.reqs.objective_substats),
-            -topping.value(self.reqs.valid_substats),
-            -topping.value(self.reqs.objective_substats),
-        )
-
-    def _greedy_solution(self):
-        for offset in range(6):
-            greedy_solution = ToppingSet([])
-            for topping in self.toppings:
-                potential_combo = ToppingSet(greedy_solution.toppings + [topping])
-
-                if len(potential_combo.toppings) == 5:
-                    if all(req.op.compare(potential_combo.value(req.substat), req.target) for req in self.reqs.valid):
-                        greedy_solution = potential_combo
-                        break
-                else:
-                    if all(req.op.compare(potential_combo.value(req.substat), req.target) for req in self.reqs.valid):
-                        greedy_solution = potential_combo
-
-                    elif all(
-                        req.op.compare(
-                            potential_combo.value(req.substat), req.target - Decimal(1) - (Decimal("0.1") * offset)
-                        )
-                        for req in self.reqs.ceiling_reqs()
-                    ):
-                        greedy_solution = potential_combo
-
-            if len(greedy_solution.toppings) == 5:
-                return greedy_solution
-
-    def _key(self, topping: Topping):
-        return (
-            ~(topping.flavor in self.reqs.objective_substats),
-            -len([substat for substat in topping.substats if substat[0] in self.reqs.valid_substats]),
-            -topping.value(self.reqs.all_substats),
-        )
-
-    def _best_objective(self, candidate: ToppingSet):
-        # if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
-        #     tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
-        #     tqdm.write(str(candidate))
-        #     tqdm.write(str(candidate.value(self.reqs.objective_substats)))
-        #     tqdm.write(str(self.reqs.objective.value(candidate)))
-        #     tqdm.write(str(self.reqs.objective.floor(candidate)))
+    def best_objective(self, candidate: ToppingSet):
+        if self.solution is None or self.reqs.objective.value(candidate) > self.reqs.objective.value(self.solution):
+            tqdm.write(f":SOLUTION: {' | '.join([str(topping) for topping in candidate.toppings])}")
+            tqdm.write(str(candidate))
+            tqdm.write(str(self.reqs.objective.value(candidate)))
+            tqdm.write(str(self.reqs.objective.floor(candidate)))
         if self.solution is None:
             return candidate
         return max(self.solution, candidate, key=lambda x: self.reqs.objective.value(x))
 
-    def _dfs(self, combo: List[Topping], idx):
+    def dfs(self, combo: List[Topping], idx):
         """Dfs combination generator, dfs so a benchmark solution is found as soon as possible"""
+        # if len(combo) == 1 and idx == 101:
+        #     tqdm.write("TRIGGERED")
+
         if len(combo) == 1:
-            # tqdm.write(f"{idx} : {combo[0]} : {self._key(combo[0])}")
+            # tqdm.write(f"{idx} : {combo[0]} : {self.key(combo[0])}")
             yield combo[0]
-        if (reason := self._prune(combo, self.toppings[idx:])) != Prune.NONE:
-            # tqdm.write(f"PRUNE : {reason} : {[str(topping) for topping in combo]}")
+        if (reason := self.prune(combo, self.toppings[idx:]))[0] != Prune.NONE:
+            # if self.trip:
+            #     tqdm.write(f"PRUNE : {reason} : {[str(topping) for topping in combo]}")
             return reason
         if len(combo) == 5:
-            topping_set = ToppingSet(combo)
-            self.solution = self._best_objective(topping_set)
+            self.solution = self.best_objective(ToppingSet(combo))
             return
         if idx == len(self.toppings):
             return
 
-        valid_plane, unfiltered_valid_plane, obj_plane, all_plane = self.reqs.objective.init_planes()
-
+        planes = self.cutter.init_planes()
         for i in range(idx, len(self.toppings)):
-            if self.reqs.cut_topping(self.toppings[i], valid_plane, unfiltered_valid_plane, obj_plane, all_plane):
+            # if len(combo) == 1 and idx == 1 and i == 7:
+            #     pass
+            # if i == 10:
+            #     pass
+            # if i == 100:
+            #     pass
+            # if i == 347:
+            #     pass
+
+            # if len(combo) == 1 and f"{' | '.join([str(topping) for topping in combo])} : {self.toppings[i]}" == "CRIT% : SPD - 2.6, ATK - 2.1, CRT - 2.1 : CRIT% : CD - 1.8, SPD - 2.7, CRT - 1.6":
+            #     tqdm.write("TRIGGERED")
+            # if idx == 0 and str(self.toppings[i]) == "CRIT% : SPD - 2.6, ATK - 2.1, CRT - 2.1":
+            #     tqdm.write("TRIGGERED")
+
+            # topping = self.toppings[i]
+            if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
-            reason = yield from self._dfs(combo + [self.toppings[i]], i + 1)
+            reason = yield from self.dfs(combo + [self.toppings[i]], i + 1)
 
             if reason is None:
                 continue
-            if Prune.COMBINED_VALID_FAILURE in reason:
-                valid_plane = self.reqs.objective.update_valid_plane(
-                    valid_plane, self.toppings[i], self.reqs.valid_substats
-                )
-            if Prune.COMBINED_UNFILTERED_VALID_FAILURE in reason:
-                unfiltered_valid_plane = self.reqs.objective.update_valid_plane(
-                    unfiltered_valid_plane, self.toppings[i], self.reqs.unfiltered_valid_substats
-                )
-            if Prune.COMBINED_OBJECTIVE_FAILURE in reason:
-                obj_plane = self.reqs.objective.update_obj_plane(
-                    obj_plane, self.toppings[i], self.reqs.objective_substats
-                )
-            if Prune.COMBINED_ALL_FAILURE in reason:
-                all_plane = self.reqs.objective.update_all_plane(
-                    all_plane,
-                    self.toppings[i],
-                    self.reqs.valid_substats,
-                    self.reqs.objective_substats,
-                    self.reqs.all_substats,
-                )
 
-    def _prune(self, combo: List[Topping], toppings: List[Topping]):
+            self.cutter.update_planes(self.toppings[i], planes, *reason)
+
+    def prune(self, combo: List[Topping], toppings: List[Topping]):
         """Prune a combination subtree from consideration if it is unfavorable"""
-
-        overall_set_requirements = defaultdict(int)
-        for req in self.reqs.floor_reqs():
-            substat, compare, required = req.substat, req.op.compare, req.target
-
-            req_count = None
-            for potential_req_count, potential_set in self._floor_check(combo, toppings, substat):
-                if compare(potential_set.value(substat), required):
-                    req_count = potential_req_count
-                    break
-
-            if req_count is None:
-                return Prune.SIMPLE_VALID_FAILURE
-
-            overall_set_requirements[substat] = max(overall_set_requirements.get("substat", float("-inf")), req_count)
-
-        if self.solution and len(combo) != 5:
-            req_count = None
-            for potential_req_count, potential_combined in self._objective_check(combo, toppings):
-                if operator.gt(potential_combined, self.reqs.objective.floor(self.solution)):
-                    req_count = potential_req_count
-                    break
-
-            if req_count is None:
-                return Prune.SIMPLE_OBJECTIVE_FAILURE
-
-            for substat in self.reqs.objective_substats:
-                req_count -= overall_set_requirements[substat]
-            overall_set_requirements[self.reqs.objective_substats] = req_count
-
-        if sum(count for count in overall_set_requirements.values()) > 5 - len(combo):
-            return Prune.CONFLICTING_REQUIREMENTS_FAILURE
-
         failures = Prune.NONE
 
-        if self.solution and self.reqs.valid and len(combo) != 5:
-            combined = self._best_combined_valid_case(
-                combo, toppings, overall_set_requirements, self.reqs.valid_substats
-            )
+        floor_failures = []
+        overall_set_requirements = {}
+        for r in self.reqs.floor_reqs():  # valid floor check
+            substat, compare, required = r.substat, r.op.compare, r.target
+
+            for potential_req_count, potential_set in self.floor_case(combo, toppings, substat):
+                if compare(potential_set.value(substat), required):
+                    overall_set_requirements[substat] = potential_req_count
+                    break
+
+            if overall_set_requirements.get(substat) is None:
+                failures |= Prune.FLOOR_FAILURE
+                floor_failures.append(substat)
+
+        ceil_failures = []
+        for r in self.reqs.ceiling_reqs():  # valid ceiling check
+            substat, compare, required = r.substat, r.op.compare, r.target
+
+            potential_set = self.ceiling_case(combo, toppings, substat)
+            if potential_set is None or not compare(potential_set.value(substat), required):
+                failures |= Prune.CEILING_FAILURE
+                ceil_failures.append(substat)
+
+        if self.solution and len(combo) != 5:  # objective floor check
+            # if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
+            #     for potential_req_count, potential_combined, potential_set in self.objective_case(combo, toppings):
+            #         if potential_combined > 0 and self.reqs.objective.special_upper(potential_combined, potential_set, combo) > self.reqs.objective.value(self.solution):
+            #             existing_req = sum(overall_set_requirements.get(s, 0) for s in self.reqs.objective.types)
+            #             overall_set_requirements[self.reqs.objective.types] = potential_req_count - existing_req
+            #             break
+            # else:
+            for potential_req_count, potential_combined, _ in self.objective_case(combo, toppings):
+                if potential_combined > self.reqs.objective.floor(self.solution):
+                    existing_req = sum(overall_set_requirements.get(s, 0) for s in self.reqs.objective.types)
+                    overall_set_requirements[self.reqs.objective.types] = potential_req_count - existing_req
+                    break
+
+            if overall_set_requirements.get(self.reqs.objective.types) is None:
+                failures |= Prune.FLOOR_FAILURE
+                floor_failures.append(self.reqs.objective.types)
+
+        if sum(overall_set_requirements.values()) > 5 - len(combo):  # combined topping req count check
+            failures |= Prune.CONFLICTING_REQS_FAILURE
+
+        if self.solution and len(combo) != 5:
+            combined = self.combined_valid_case(combo, toppings, overall_set_requirements)
             if combined is None or combined < 0:
                 failures |= Prune.COMBINED_VALID_FAILURE
 
-            combined = self._best_combined_valid_case(
-                combo, toppings, overall_set_requirements, self.reqs.unfiltered_valid_substats
-            )
+            combined = self.combined_obj_case(combo, toppings, overall_set_requirements)
             if combined is None or combined < 0:
-                failures |= Prune.COMBINED_UNFILTERED_VALID_FAILURE
+                failures |= Prune.COMBINED_OBJ_FAILURE
 
-            if failures != Prune.NONE:
-                return failures
+            combined = self.combined_all_case(combo, toppings, overall_set_requirements)
+            if combined is None or combined < 0:
+                failures |= Prune.COMBINED_ALL_FAILURE
 
-        # check objective requirements
-        if self.solution and len(combo) != 5:
-            if self.reqs.objective.type == Type.E_DMG:
-                mutable_set_reqs = overall_set_requirements.copy()
-                mutable_set_reqs.pop(self.reqs.objective_substats, 0)
-
-                wildcard_count = 6 - len(combo) - sum(count for count in mutable_set_reqs.values())
-
-                all_value_met = False
-                mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
-
-                for _ in range(wildcard_count):
-                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.all_substats)
-                    if full_set is not None:
-                        combined = full_set.value(self.reqs.all_substats) - sum(
-                            self.reqs.floor(substat) for substat in self.reqs.valid_substats
-                        )
-                        if combined > 0 and self.reqs.objective.upper(
-                            combined, full_set, combo
-                        ) > self.reqs.objective.value(self.solution):
-                            all_value_met = True
-                            break
-
-                    mutable_set_reqs[Type.CRIT] += 1
-                    mutable_set_reqs[Type.ATK] -= 1
-
-                if not all_value_met:
-                    failures |= Prune.COMBINED_ALL_FAILURE
-
-                mutable_set_reqs = overall_set_requirements.copy()
-                mutable_set_reqs.pop(self.reqs.objective_substats, 0)
+            if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
+                overall_set_requirements.pop(self.reqs.objective.types, None)
 
                 obj_value_met = False
-                mutable_set_reqs[Type.ATK] = mutable_set_reqs[Type.ATK] + wildcard_count - 1
-
-                for _ in range(wildcard_count):
-                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.objective_substats)
-                    if full_set is not None:
-                        combined = full_set.value(self.reqs.objective_substats)
-                        if combined > 0 and self.reqs.objective.upper(
-                            combined, full_set, combo
-                        ) > self.reqs.objective.value(self.solution):
-                            obj_value_met = True
-                            break
-
-                    mutable_set_reqs[Type.CRIT] += 1
-                    mutable_set_reqs[Type.ATK] -= 1
+                for full_set in self.obj_special_case(combo, toppings, overall_set_requirements):
+                    combined = full_set.value(self.reqs.objective.types)
+                    if combined > 0 and self.reqs.objective.special_upper(combined, full_set, combo) > self.reqs.objective.value(self.solution):
+                        obj_value_met = True
+                        break
 
                 if not obj_value_met:
-                    failures |= Prune.COMBINED_OBJECTIVE_FAILURE
-
-            elif self.reqs.objective.type == Type.VITALITY:
-                mutable_set_reqs = overall_set_requirements.copy()
-                mutable_set_reqs.pop(self.reqs.objective_substats, 0)
-
-                wildcard_count = 6 - len(combo) - sum(count for count in mutable_set_reqs.values())
+                    failures |= Prune.COMBINED_SPECIAL_OBJ_FAILURE
 
                 all_value_met = False
-                mutable_set_reqs[Type.DMGRES] = mutable_set_reqs[Type.DMGRES] + wildcard_count - 1
-
-                for _ in range(wildcard_count):
-                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.all_substats)
-                    if full_set is not None:
-                        combined = full_set.value(self.reqs.all_substats) - sum(
-                            self.reqs.floor(substat) for substat in self.reqs.valid_substats
-                        )
-                        if combined > 0 and self.reqs.objective.upper(
-                            combined, full_set, combo
-                        ) > self.reqs.objective.value(self.solution):
-                            all_value_met = True
-                            break
-
-                    mutable_set_reqs[Type.DMGRES] -= 1
+                for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
+                    combined = full_set.value(self.reqs.all_substats) - sum(self.reqs.floor(s) for s in self.reqs.filtered_valid_substats)
+                    if combined > 0 and self.reqs.objective.special_upper(combined, full_set, combo) > self.reqs.objective.value(self.solution):
+                        all_value_met = True
+                        break
 
                 if not all_value_met:
-                    failures |= Prune.COMBINED_ALL_FAILURE
+                    failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-                mutable_set_reqs = overall_set_requirements.copy()
-                mutable_set_reqs.pop(self.reqs.objective_substats, 0)
+        return failures, floor_failures, ceil_failures
 
-                obj_value_met = False
-                mutable_set_reqs[Type.DMGRES] = mutable_set_reqs[Type.DMGRES] + wildcard_count - 1
+    def floor_pool(self, n: int, pool: Iterable[Topping], substats):
+        return nlargest(n, pool, key=lambda x: x.value(substats))
 
-                for _ in range(wildcard_count):
-                    full_set = self._best_combined_case(combo, toppings, mutable_set_reqs, self.reqs.objective_substats)
-                    if full_set is not None:
-                        combined = full_set.value(self.reqs.objective_substats)
-                        if combined > 0 and self.reqs.objective.upper(
-                            combined, full_set, combo
-                        ) > self.reqs.objective.value(self.solution):
-                            obj_value_met = True
-                            break
+    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+        base_n = len(combo)
+        combo = combo.copy()
+        for req_substats, req_count in set_reqs.items():
+            if req_count:
+                req_substats = req_substats if type(req_substats) is tuple else (req_substats,)
+                match_set = (topping for topping in toppings if topping.flavor in req_substats)
+                combo += self.floor_pool(req_count, match_set, substats)
 
-                    mutable_set_reqs[Type.DMGRES] -= 1
+        if len(combo) == base_n + sum(set_reqs.values()):
+            return combo
 
-                if not obj_value_met:
-                    failures |= Prune.COMBINED_OBJECTIVE_FAILURE
-
-            else:
-                combined = self._best_combined_all_case(combo, toppings, overall_set_requirements)
-                if combined is None or combined <= 0:
-                    failures |= Prune.COMBINED_ALL_FAILURE
-
-                combined = self._best_combined_objective_case(combo, toppings, overall_set_requirements)
-                if combined is None or combined <= 0:
-                    failures |= Prune.COMBINED_OBJECTIVE_FAILURE
-
-        for req in self.reqs.ceiling_reqs():
-            substat, compare, required = req.substat, req.op.compare, req.target
-
-            potential_set = self._ceiling_check(combo, toppings, substat)
-            if potential_set is None or not compare(potential_set.value(substat), required):
-                failures |= Prune.SIMPLE_VALID_FAILURE
-
-        return failures
-
-    @staticmethod
-    def _floor_check(combo: List[Topping], toppings: List[Topping], substats: Union[Type, Tuple[Type]]):
+    def floor_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats):
         if len(combo) == 5:
             yield 0, ToppingSet(combo)
             return
 
-        substats = substats if type(substats) == tuple else (substats,)
-        match_set = [topping for topping in toppings if topping.flavor in substats]
-        wild_set = [topping for topping in toppings if topping.flavor not in substats]
+        n = 5 - len(combo)
+        substats = substats if type(substats) is tuple else (substats,)
+        match_pool = self.floor_pool(n, (topping for topping in toppings if topping.flavor in substats), substats)
+        wild_pool = self.floor_pool(n, (topping for topping in toppings if topping.flavor not in substats), substats)
 
-        for match_count in range(6 - len(combo)):
-            wild_count = 5 - len(combo) - match_count
+        for match_count in range(n+1):
+            wild_count = n - match_count
 
-            potential_set = ToppingSet(
-                combo.copy()
-                + nlargest(match_count, match_set, key=lambda x: x.value(substats))
-                + nlargest(wild_count, wild_set, key=lambda x: x.value(substats))
-            )
+            potential_set = combo + match_pool[:match_count] + wild_pool[:wild_count]
+            if len(potential_set) == 5:
+                yield match_count, ToppingSet(potential_set)
 
-            if len(potential_set.toppings) == 5:
-                yield match_count, potential_set
-
-    @staticmethod
-    def _ceiling_check(combo: List[Topping], toppings: List[Topping], substats: Union[Type, Tuple[Type]]):
+    def ceiling_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats):
         if len(combo) == 5:
             return ToppingSet(combo)
 
-        substats = substats if type(substats) == tuple else (substats,)
+        substats = substats if type(substats) is tuple else (substats,)
 
-        potential_set = ToppingSet(combo.copy() + nsmallest(5 - len(combo), toppings, key=lambda x: x.value(substats)))
+        potential_set = combo + nsmallest(5 - len(combo), toppings, key=lambda x: x.value(substats))
+        if len(potential_set) == 5:
+            return ToppingSet(potential_set)
 
-        if len(potential_set.toppings) == 5:
-            return potential_set
+    def objective_case(self, combo: List[Topping], toppings: List[Topping]):
+        for potential_req_count, potential_set in self.floor_case(combo, toppings, self.reqs.objective.types):
+            unmatched_count = 5 - potential_req_count
+            potential_value = sum(potential_set.raw(s) for s in self.reqs.objective.types)
+            potential_value += self.reqs.best_possible_set_effect(combo, self.reqs.objective.types, 5 - unmatched_count)
+            yield potential_req_count, potential_value, potential_set
 
-    def _objective_check(self, combo: List[Topping], toppings: List[Topping]):
-        match_set = [topping for topping in toppings if topping.flavor in self.reqs.objective_substats]
-        wild_set = [topping for topping in toppings if topping.flavor not in self.reqs.objective_substats]
+    def combined_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+        combo = self.fill_out_combo(combo, toppings, set_reqs, substats)
 
-        for match_count in range(6 - len(combo)):
-            wild_count = 5 - len(combo) - match_count
+        if combo is None:
+            return None
 
-            potential_set = ToppingSet(
-                combo.copy()
-                + nlargest(match_count, match_set, key=lambda x: x.value(self.reqs.objective_substats))
-                + nlargest(wild_count, wild_set, key=lambda x: x.value(self.reqs.objective_substats))
-            )
-
-            if len(potential_set.toppings) == 5:
-                yield match_count, sum(
-                    potential_set.raw(substat) for substat in self.reqs.objective_substats
-                ) + self.reqs.best_possible_set_effect(wild_count)
-
-    @staticmethod
-    def _best_combined_case(combo: List[Topping], toppings: List[Topping], set_reqs: dict, key):
-        partial_set = combo.copy()
-
-        for substats, req_count in set_reqs.items():
-            if req_count:
-                substats = substats if type(substats) == tuple else (substats,)
-                match_set = [top for top in toppings if top.flavor in substats]
-                partial_set += nlargest(req_count, match_set, key=lambda x: x.value(key))
-
-        if len(partial_set) != 5:
-            remaining_set = set(toppings).difference(set(partial_set))
-            full_set = partial_set + nlargest(5 - len(partial_set), remaining_set, key=lambda x: x.value(key))
+        if len(combo) != 5:
+            remaining_set = set(toppings).difference(set(combo))
+            full_set = combo + self.floor_pool(5 - len(combo), remaining_set, substats)
         else:
-            full_set = partial_set
+            full_set = combo
 
         if len(full_set) == 5:
-            full_set = ToppingSet(full_set)
+            return ToppingSet(full_set)
 
-            return full_set
-        return None
+    def combined_value(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+        full_set = self.combined_case(combo, toppings, set_reqs, substats)
+        if full_set is None:
+            return
 
-    def _best_combined_valid_case(
-        self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: List[Type]
-    ):
-        full_set = self._best_combined_case(combo, toppings, set_reqs, substats)
+        full_value = sum(full_set.raw(s) for s in substats)
+        full_value += self.reqs.best_possible_set_effect(combo, substats, 0)
+        return full_value
 
-        if full_set is not None:
-            return full_set.value(substats) - sum(self.reqs.floor(substat) for substat in substats)
-        return None
+    def combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        # tqdm.write(f"{len(combo)} : {set_reqs}")
+        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.valid_substats)
 
-    def _best_combined_all_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_set = self._best_combined_case(combo, toppings, set_reqs, self.reqs.all_substats)
+        if full_value is not None:
+            return full_value - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
 
-        if full_set is not None:
-            return (
-                full_set.value(self.reqs.all_substats)
-                - sum(self.reqs.floor(substat) for substat in self.reqs.valid_substats)
-                - self.reqs.objective.floor(self.solution)
-            )
-        return None
+    def combined_obj_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.objective.types)
 
-    def _best_combined_objective_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_set = self._best_combined_case(combo, toppings, set_reqs, self.reqs.objective_substats)
+        if full_value is not None:
+            return full_value - self.reqs.objective.floor(self.solution)
 
-        if full_set is not None:
-            return full_set.value(self.reqs.objective_substats) - self.reqs.objective.floor(self.solution)
-        return None
+    def combined_all_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.all_substats)
+
+        if full_value is not None:
+            return full_value - sum(self.reqs.floor(s) for s in self.reqs.filtered_valid_substats) - self.reqs.objective.floor(self.solution)
+
+    # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
+    def special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+        combo = self.fill_out_combo(combo, toppings, set_reqs, substats)
+        if combo is None:
+            return
+
+        if len(combo) != 5:
+            remaining_set = set(toppings).difference(set(combo))
+
+            n = 5 - len(combo)
+            first_substat = (topping for topping in remaining_set if topping.flavor == self.reqs.objective.types[0])
+            first_pool = self.floor_pool(n, first_substat, substats)
+            second_substat = (topping for topping in remaining_set if topping.flavor == self.reqs.objective.types[1])
+            second_pool = self.floor_pool(n, second_substat, substats)
+
+            for first_count in range(n + 1):
+                second_count = n - first_count
+                potential_set = combo + first_pool[:first_count] + second_pool[:second_count]
+                if len(potential_set) == 5:
+                    yield ToppingSet(potential_set)
+        else:
+            yield ToppingSet(combo)
+
+    def obj_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        yield from self.special_case(combo, toppings, set_reqs, self.reqs.objective.types)
+
+    def all_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        yield from self.special_case(combo, toppings, set_reqs, self.reqs.all_substats)

@@ -16,6 +16,7 @@ class Resonance(Enum):
 
 
 class Type(Enum):
+    # in-game substats
     DMGRES = "DMG Resist"
     ATK = "ATK"
     CD = "Cooldown"
@@ -26,14 +27,15 @@ class Type(Enum):
     DEF = "DEF"
     BUFFRES = "Debuff Resist"
     CRITRES = "CRIT Resist"
+    # in-game attributes
     CRIT_DMG = "CRIT DMG"
     ATK_MULT = "ATK MULT"
+    # custom objective functions
     COMBO = "Combo"
     E_DMG = "E[DMG]"
     VITALITY = "Vitality"
-    E_VIT = "E[Vit]"
+    # helpers
     RNG = "RNG"
-    WILDCARD = "Wildcard"
 
 
 INFO = {
@@ -149,6 +151,8 @@ INFO = {
     },
 }
 
+Substats = Union[Type, Tuple[Type]]
+
 
 class Topping:
     """A single topping"""
@@ -169,6 +173,7 @@ class Topping:
 
     def __eq__(self, other):
         return self.substats == other.substats and self.resonance == other.resonance
+
 
     def __hash__(self):
         return id(self)

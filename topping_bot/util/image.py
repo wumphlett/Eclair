@@ -238,7 +238,7 @@ def topping_set_to_image(topping_set: ToppingSet, user_id, name=None):
         temp_subs = " : ".join(f"{INFO[sub[0]]['short']} {sub[1]}" for sub in x.substats[1:])
         return draw.textlength(temp_subs, font=font)
 
-    topping_set.toppings.sort(key=topping_text_sort)
+    # topping_set.toppings.sort(key=topping_text_sort)
     toppings = topping_set.toppings
     toppings = [toppings[3], toppings[1], toppings[0], toppings[2], toppings[4]]
 
