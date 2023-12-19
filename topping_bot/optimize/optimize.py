@@ -80,15 +80,11 @@ class Optimizer:
 
     def dfs(self, combo: List[Topping], idx):
         """Dfs combination generator, dfs so a benchmark solution is found as soon as possible"""
-        # if len(combo) == 1 and idx == 101:
-        #     tqdm.write("TRIGGERED")
-
         if len(combo) == 1:
             # tqdm.write(f"{idx} : {combo[0]} : {self.key(combo[0])}")
             yield combo[0]
         if (reason := self.prune(combo, self.toppings[idx:]))[0] != Prune.NONE:
-            # if self.trip:
-            #     tqdm.write(f"PRUNE : {reason} : {[str(topping) for topping in combo]}")
+            # tqdm.write(f"PRUNE : {reason} : {[str(topping) for topping in combo]}")
             return reason
         if len(combo) == 5:
             self.solution = self.best_objective(ToppingSet(combo))
@@ -98,21 +94,10 @@ class Optimizer:
 
         planes = self.cutter.init_planes()
         for i in range(idx, len(self.toppings)):
-            # if len(combo) == 1 and idx == 1 and i == 7:
-            #     pass
-            # if i == 10:
-            #     pass
-            # if i == 100:
-            #     pass
-            # if i == 347:
-            #     pass
+            # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
+            # if idx == 1 and i == 1:
+            #     tqdm.write("TRIGGER")
 
-            # if len(combo) == 1 and f"{' | '.join([str(topping) for topping in combo])} : {self.toppings[i]}" == "CRIT% : SPD - 2.6, ATK - 2.1, CRT - 2.1 : CRIT% : CD - 1.8, SPD - 2.7, CRT - 1.6":
-            #     tqdm.write("TRIGGERED")
-            # if idx == 0 and str(self.toppings[i]) == "CRIT% : SPD - 2.6, ATK - 2.1, CRT - 2.1":
-            #     tqdm.write("TRIGGERED")
-
-            # topping = self.toppings[i]
             if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
@@ -151,17 +136,10 @@ class Optimizer:
                 ceil_failures.append(substat)
 
         if self.solution and len(combo) != 5:  # objective floor check
-            # if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
-            #     for potential_req_count, potential_combined, potential_set in self.objective_case(combo, toppings):
-            #         if potential_combined > 0 and self.reqs.objective.special_upper(potential_combined, potential_set, combo) > self.reqs.objective.value(self.solution):
-            #             existing_req = sum(overall_set_requirements.get(s, 0) for s in self.reqs.objective.types)
-            #             overall_set_requirements[self.reqs.objective.types] = potential_req_count - existing_req
-            #             break
-            # else:
             for potential_req_count, potential_combined, _ in self.objective_case(combo, toppings):
                 if potential_combined > self.reqs.objective.floor(self.solution):
                     existing_req = sum(overall_set_requirements.get(s, 0) for s in self.reqs.objective.types)
-                    overall_set_requirements[self.reqs.objective.types] = potential_req_count - existing_req
+                    overall_set_requirements[self.reqs.objective.types] = max(potential_req_count - existing_req, 0)
                     break
 
             if overall_set_requirements.get(self.reqs.objective.types) is None:
@@ -190,7 +168,9 @@ class Optimizer:
                 obj_value_met = False
                 for full_set in self.obj_special_case(combo, toppings, overall_set_requirements):
                     combined = full_set.value(self.reqs.objective.types)
-                    if combined > 0 and self.reqs.objective.special_upper(combined, full_set, combo) > self.reqs.objective.value(self.solution):
+                    if combined > 0 and self.reqs.objective.special_upper(
+                        combined, full_set, combo
+                    ) > self.reqs.objective.value(self.solution):
                         obj_value_met = True
                         break
 
@@ -199,8 +179,12 @@ class Optimizer:
 
                 all_value_met = False
                 for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
-                    combined = full_set.value(self.reqs.all_substats) - sum(self.reqs.floor(s) for s in self.reqs.filtered_valid_substats)
-                    if combined > 0 and self.reqs.objective.special_upper(combined, full_set, combo) > self.reqs.objective.value(self.solution):
+                    combined = full_set.value(self.reqs.all_substats) - sum(
+                        self.reqs.floor(s) for s in self.reqs.valid_substats
+                    )
+                    if combined > 0 and self.reqs.objective.special_upper(
+                        combined, full_set, combo
+                    ) > self.reqs.objective.value(self.solution):
                         all_value_met = True
                         break
 
@@ -234,7 +218,7 @@ class Optimizer:
         match_pool = self.floor_pool(n, (topping for topping in toppings if topping.flavor in substats), substats)
         wild_pool = self.floor_pool(n, (topping for topping in toppings if topping.flavor not in substats), substats)
 
-        for match_count in range(n+1):
+        for match_count in range(n + 1):
             wild_count = n - match_count
 
             potential_set = combo + match_pool[:match_count] + wild_pool[:wild_count]
@@ -283,7 +267,6 @@ class Optimizer:
         return full_value
 
     def combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        # tqdm.write(f"{len(combo)} : {set_reqs}")
         full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.valid_substats)
 
         if full_value is not None:
@@ -299,7 +282,11 @@ class Optimizer:
         full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.all_substats)
 
         if full_value is not None:
-            return full_value - sum(self.reqs.floor(s) for s in self.reqs.filtered_valid_substats) - self.reqs.objective.floor(self.solution)
+            return (
+                full_value
+                - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
+                - self.reqs.objective.floor(self.solution)
+            )
 
     # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
     def special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):

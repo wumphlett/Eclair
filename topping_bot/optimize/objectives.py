@@ -107,10 +107,22 @@ class EDMG(Special):
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
 
         combo = ToppingSet(combo)
-        atk, crit = combo.value(Type.ATK) / Decimal("100") + self.base_atk, combo.value(Type.CRIT) / Decimal("100") + self.base_crit
+        atk, crit = (
+            combo.value(Type.ATK) / Decimal("100") + self.base_atk,
+            combo.value(Type.CRIT) / Decimal("100") + self.base_crit,
+        )
 
-        ideal_possible_atk = max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"]) + self.base_atk
-        ideal_possible_crit = max(min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]["max"]), self.bounds[Type.CRIT]["min"]) + self.base_crit
+        ideal_possible_atk = (
+            max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"])
+            + self.base_atk
+        )
+        ideal_possible_crit = (
+            max(
+                min(max(combined - ideal_possible_atk, crit) - self.base_crit, self.bounds[Type.CRIT]["max"]),
+                self.bounds[Type.CRIT]["min"],
+            )
+            + self.base_crit
+        )
         ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
@@ -123,7 +135,9 @@ class EDMG(Special):
         minimum_atk = Decimal(math.sqrt(obj / (self.crit_dmg - 1)))
         minimum_crit = (obj - (1 + self.mult) * minimum_atk) / ((self.crit_dmg - 1) * minimum_atk)
 
-        return ((minimum_atk + minimum_crit - self.base_atk - self.base_crit) * Decimal(100)).quantize(Decimal(".1"), rounding=ROUND_UP)
+        return ((minimum_atk + minimum_crit - self.base_atk - self.base_crit) * Decimal(100)).quantize(
+            Decimal(".1"), rounding=ROUND_UP
+        )
 
     def fancy_value(self, topping_set: ToppingSet):
         crit = min(Decimal(1), topping_set.value(Type.CRIT) / Decimal(100) + self.base_crit)
@@ -178,7 +192,9 @@ class Vitality(Special):
         obj_count = len([top for top in full_set.toppings[len(combo.toppings) :] if top.flavor == Type.DMGRES])
 
         _, bonus = full_set.set_effect(Type.DMGRES)
-        max_dmgres = (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus
+        max_dmgres = (
+            (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus
+        )
 
         dmgres += min(combined, max_dmgres)
         hp = (hp + combined - min(combined, max_dmgres) + self.base_hp) / Decimal("100")

@@ -194,11 +194,6 @@ class Requirements:
     @property
     @cache
     def valid_substats(self):
-        return tuple(r.substat for r in self.valid if r.op.str == ">=")
-
-    @property
-    @cache
-    def filtered_valid_substats(self):
         return tuple(r.substat for r in self.valid if r.op.str == ">=" and r.substat not in self.objective.types)
 
     @property
