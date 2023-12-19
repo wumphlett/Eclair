@@ -180,7 +180,7 @@ class Topping:
     @cache
     def value(self, substats: Union[Type, Iterable[Type]]):
         """Value of a topping given a specific substat type"""
-        substats = substats if type(substats) == tuple else (substats,)
+        substats = substats if type(substats) is tuple else (substats,)
         return sum(value for stat_type, value in self.substats if stat_type in substats)
 
     def validate(self):

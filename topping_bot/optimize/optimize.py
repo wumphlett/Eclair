@@ -94,6 +94,10 @@ class Optimizer:
 
         planes = self.cutter.init_planes()
         for i in range(idx, len(self.toppings)):
+            # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
+            # if idx == 1 and i == 1:
+            #     tqdm.write("TRIGGER")
+
             if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
@@ -135,7 +139,7 @@ class Optimizer:
             for potential_req_count, potential_combined, _ in self.objective_case(combo, toppings):
                 if potential_combined > self.reqs.objective.floor(self.solution):
                     existing_req = sum(overall_set_requirements.get(s, 0) for s in self.reqs.objective.types)
-                    overall_set_requirements[self.reqs.objective.types] = potential_req_count - existing_req
+                    overall_set_requirements[self.reqs.objective.types] = max(potential_req_count - existing_req, 0)
                     break
 
             if overall_set_requirements.get(self.reqs.objective.types) is None:
@@ -176,7 +180,7 @@ class Optimizer:
                 all_value_met = False
                 for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
                     combined = full_set.value(self.reqs.all_substats) - sum(
-                        self.reqs.floor(s) for s in self.reqs.filtered_valid_substats
+                        self.reqs.floor(s) for s in self.reqs.valid_substats
                     )
                     if combined > 0 and self.reqs.objective.special_upper(
                         combined, full_set, combo
@@ -280,7 +284,7 @@ class Optimizer:
         if full_value is not None:
             return (
                 full_value
-                - sum(self.reqs.floor(s) for s in self.reqs.filtered_valid_substats)
+                - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
                 - self.reqs.objective.floor(self.solution)
             )
 
