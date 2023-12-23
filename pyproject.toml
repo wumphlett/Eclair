@@ -35,3 +35,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 reqconvert = 'topping_bot.util.scripts:req_convert'
 assetdump = 'topping_bot.util.scripts:cookie_dump'
+reg = 'topping_bot.util.scripts:gb_hp_regression'

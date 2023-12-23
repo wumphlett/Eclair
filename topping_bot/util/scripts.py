@@ -1,5 +1,8 @@
 import shutil
 
+import numpy as np
+
+from topping_bot.crk.stats import gbhps
 from topping_bot.optimize.requirements import sanitize
 from topping_bot.util.const import REQS_PATH, STATIC_PATH
 
@@ -19,3 +22,10 @@ def cookie_dump():
                 shutil.move(fp, cookie_dir)
             else:
                 fp.unlink()
+
+
+def gb_hp_regression():
+    adjusted_gbhps = [hp / 5600 for hp in gbhps[30:]]
+    lvls = list(range(30, len(gbhps)))
+    exp, base = np.exp(np.polyfit(lvls, np.log(adjusted_gbhps), 1))
+    print(base, exp)
