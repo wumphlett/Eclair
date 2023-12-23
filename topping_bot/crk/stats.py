@@ -1,11 +1,17 @@
 from decimal import Decimal, ROUND_HALF_UP, ROUND_UP
 
+import numpy as np
+
 from topping_bot.util.const import INFO_PATH
 
 gbhps = []
 with open(INFO_PATH / "gbhp.txt") as f:
     for gbhp in f.readlines():
         gbhps.append(int(gbhp.replace(",", "")))
+
+adjusted_gbhps = [hp / 5600 for hp in gbhps[30:]]
+lvls = list(range(30, len(gbhps)))
+EXP, BASE = np.exp(np.polyfit(lvls, np.log(adjusted_gbhps), 1))
 
 
 gbatks = []
@@ -44,7 +50,7 @@ def starting_cookie_cd(skill_cd: int, override=False):
 def guild_battle_boss_hp(lvl: int):
     if lvl <= len(gbhps):
         return gbhps[lvl - 1]
-    hp = Decimal("12253.654") * Decimal("1.030225") ** lvl
+    hp = Decimal(BASE) * Decimal(EXP) ** lvl
     return hp.quantize(0, rounding=ROUND_HALF_UP) * 5600
 
 

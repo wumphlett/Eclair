@@ -15,4 +15,4 @@ stats:
   join: 1110469557862268949
   server: 1110469159076249600
   user: 1110469368346857472
-debug: Creamery  # Creamery used when debugging
+debug: Optimizers  # Optimizers used when debugging

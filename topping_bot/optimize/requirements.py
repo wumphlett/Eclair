@@ -6,7 +6,7 @@ from typing import Any, List, Tuple
 import yaml
 from yaml import BaseLoader
 
-from topping_bot.crk.toppings import INFO, Resonance, Substats, Topping, Type
+from topping_bot.crk.toppings import INFO, Resonance, Substats, Topping, ToppingSet, Type
 from topping_bot.optimize.objectives import Special, Combo, EDMG, Vitality, Objective
 from topping_bot.optimize.validity import Normal, Range, Equality, Relative
 from topping_bot.util.const import TMP_PATH
@@ -219,6 +219,22 @@ class Requirements:
     @cache
     def zero_reqs(self):
         return [valid for valid in self.valid if valid.op.str == "<=" and valid.target == Decimal(0)]
+
+    # def fast_non_obj(self, combo: List[Topping], topping: Topping) -> int:
+    #     total_non_obj_count = 0
+    #     partial_set = ToppingSet(combo + [topping])
+    #
+    #     for r in self.floor_reqs():  # valid floor check
+    #         substat, required = r.substat, r.target
+    #
+    #         non_obj_count = 0
+    #         for obj_count in range(5 - len(combo) + 1)[::-1]:
+    #             # if met, break
+    #             non_obj_count += 1
+    #         if partial_set.value(substat) >= required:
+    #             pass
+    #
+    #     return total_non_obj_count
 
     def best_possible_set_effect(self, combo: List[Topping], substats: Tuple[Type], non_match_count: int):
         best_set_bonuses = {

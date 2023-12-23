@@ -97,7 +97,7 @@ class Optimizer:
             # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
             # if idx == 1 and i == 1:
             #     tqdm.write("TRIGGER")
-
+            # non_obj_count = self.reqs.fast_non_obj(combo, self.toppings[i])
             if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
@@ -115,16 +115,18 @@ class Optimizer:
         floor_failures = []
         overall_set_requirements = {}
         for r in self.reqs.floor_reqs():  # valid floor check
-            substat, compare, required = r.substat, r.op.compare, r.target
+            substat, required = r.substat, r.target
 
             for potential_req_count, potential_set in self.floor_case(combo, toppings, substat):
-                if compare(potential_set.value(substat), required):
+                if potential_set.value(substat) >= required:
                     overall_set_requirements[substat] = potential_req_count
                     break
 
             if overall_set_requirements.get(substat) is None:
                 failures |= Prune.FLOOR_FAILURE
                 floor_failures.append(substat)
+
+        # non_obj_count = sum(overall_set_requirements.values())
 
         ceil_failures = []
         for r in self.reqs.ceiling_reqs():  # valid ceiling check
@@ -191,12 +193,12 @@ class Optimizer:
                 if not all_value_met:
                     failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-        return failures, floor_failures, ceil_failures
+        return failures, floor_failures, ceil_failures #, non_obj_count
 
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))
 
-    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict):
         base_n = len(combo)
         combo = combo.copy()
         for req_substats, req_count in set_reqs.items():
@@ -242,11 +244,12 @@ class Optimizer:
             potential_value += self.reqs.best_possible_set_effect(combo, self.reqs.objective.types, 5 - unmatched_count)
             yield potential_req_count, potential_value, potential_set
 
-    def combined_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
-        combo = self.fill_out_combo(combo, toppings, set_reqs, substats)
+    def combined_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
+        if set_reqs is not None:
+            combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
 
-        if combo is None:
-            return None
+            if combo is None:
+                return None
 
         if len(combo) != 5:
             remaining_set = set(toppings).difference(set(combo))
@@ -257,8 +260,8 @@ class Optimizer:
         if len(full_set) == 5:
             return ToppingSet(full_set)
 
-    def combined_value(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
-        full_set = self.combined_case(combo, toppings, set_reqs, substats)
+    def combined_value(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
+        full_set = self.combined_case(combo, toppings, substats, set_reqs)
         if full_set is None:
             return
 
@@ -267,19 +270,19 @@ class Optimizer:
         return full_value
 
     def combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.valid_substats)
+        full_value = self.combined_value(combo, toppings, self.reqs.valid_substats, set_reqs)
 
         if full_value is not None:
             return full_value - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
 
     def combined_obj_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.objective.types)
+        full_value = self.combined_value(combo, toppings, self.reqs.objective.types, set_reqs)
 
         if full_value is not None:
             return full_value - self.reqs.objective.floor(self.solution)
 
     def combined_all_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_value = self.combined_value(combo, toppings, set_reqs, self.reqs.all_substats)
+        full_value = self.combined_value(combo, toppings, self.reqs.all_substats, set_reqs)
 
         if full_value is not None:
             return (
@@ -289,10 +292,11 @@ class Optimizer:
             )
 
     # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
-    def special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
-        combo = self.fill_out_combo(combo, toppings, set_reqs, substats)
-        if combo is None:
-            return
+    def special_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
+        if set_reqs is not None:
+            combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
+            if combo is None:
+                return
 
         if len(combo) != 5:
             remaining_set = set(toppings).difference(set(combo))
@@ -312,7 +316,7 @@ class Optimizer:
             yield ToppingSet(combo)
 
     def obj_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        yield from self.special_case(combo, toppings, set_reqs, self.reqs.objective.types)
+        yield from self.special_case(combo, toppings, self.reqs.objective.types, set_reqs)
 
     def all_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        yield from self.special_case(combo, toppings, set_reqs, self.reqs.all_substats)
+        yield from self.special_case(combo, toppings, self.reqs.all_substats, set_reqs)
