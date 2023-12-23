@@ -51,14 +51,10 @@ class Cutter:
             planes[Prune.COMBINED_OBJ_FAILURE] = max(
                 planes[Prune.COMBINED_OBJ_FAILURE], topping.value(self.reqs.objective.types)
             )
-        if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
-            planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE].append(
-                tuple(topping.value(s) for s in self.reqs.objective.types)
-            )
         if Prune.COMBINED_ALL_FAILURE in failures:
-            planes[Prune.COMBINED_ALL_FAILURE] = max(
-                planes[Prune.COMBINED_ALL_FAILURE], topping.value(self.reqs.all_substats)
-            )
+            planes[Prune.COMBINED_SPECIAL_ALL_FAILURE].append(tuple(topping.value(s) for s in self.reqs.all_substats))
+        if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
+            planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE].append(tuple(topping.value(s) for s in self.reqs.objective.types))
         if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
             planes[Prune.COMBINED_SPECIAL_ALL_FAILURE].append(tuple(topping.value(s) for s in self.reqs.all_substats))
 
@@ -71,14 +67,11 @@ class Cutter:
             return True
         if topping.value(self.reqs.objective.types) <= planes[Prune.COMBINED_OBJ_FAILURE]:
             return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.objective.types):
-            return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_ALL_FAILURE], *self.reqs.valid_substats, self.reqs.objective.types
-        ):
-            return True
-        if self.is_dominated(
-            topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types
-        ):
+        # if self.is_dominated(topping, planes[Prune.COMBINED_ALL_FAILURE], *self.reqs.valid_substats, self.reqs.objective.types):
+        #     return True
+        # if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.objective.types):
+        #     return True
+        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):
             return True
         return False
 

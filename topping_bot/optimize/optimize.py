@@ -170,10 +170,8 @@ class Optimizer:
                 failures |= Prune.COMBINED_ALL_FAILURE
 
             if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
-                overall_set_requirements.pop(self.reqs.objective.types, None)
-
                 obj_value_met = False
-                for full_set in self.obj_special_case(combo, toppings, overall_set_requirements):
+                for full_set in self.obj_special_case(combo, toppings):
                     combined = full_set.value(self.reqs.objective.types)
                     if combined > 0 and self.reqs.objective.special_upper(
                         combined, full_set, combo
@@ -183,6 +181,8 @@ class Optimizer:
 
                 if not obj_value_met:
                     failures |= Prune.COMBINED_SPECIAL_OBJ_FAILURE
+
+                overall_set_requirements.pop(self.reqs.objective.types, None)
 
                 all_value_met = False
                 for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
@@ -299,7 +299,7 @@ class Optimizer:
             )
 
     # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
-    def special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict, substats: Substats):
+    def special_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
         combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
         if combo is None:
             return
@@ -321,8 +321,8 @@ class Optimizer:
         else:
             yield ToppingSet(combo)
 
-    def obj_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        yield from self.special_case(combo, toppings, set_reqs, self.reqs.objective.types)
+    def obj_special_case(self, combo: List[Topping], toppings: List[Topping]):
+        yield from self.special_case(combo, toppings, self.reqs.objective.types)
 
     def all_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        yield from self.special_case(combo, toppings, set_reqs, self.reqs.all_substats)
+        yield from self.special_case(combo, toppings, self.reqs.all_substats, set_reqs)
