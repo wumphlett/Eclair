@@ -198,7 +198,7 @@ class Optimizer:
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))
 
-    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs):
+    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict):
         base_n = len(combo)
         combo = combo.copy()
         for req_substats, req_count in set_reqs.items():
