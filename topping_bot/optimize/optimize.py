@@ -50,8 +50,6 @@ class Optimizer:
 
         # presort based on objective requirements to promote finding feasible solution sooner
         self.toppings.sort(key=self.key)
-        # for i, topping in enumerate(self.toppings):
-        #     tqdm.write(f"{i} | {topping}")
 
         yield from self.dfs([], 0)
 
@@ -97,7 +95,7 @@ class Optimizer:
         planes = self.cutter.init_planes()
         for i in range(idx, len(self.toppings)):
             # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
-            # if len(combo) == 0 and i == 215: # and i == 1:
+            # if idx == 1 and i == 1:
             #     tqdm.write("TRIGGER")
 
             if self.cutter.cut_topping(self.toppings[i], planes):
@@ -120,7 +118,6 @@ class Optimizer:
             substat, compare, required = r.substat, r.op.compare, r.target
 
             for potential_req_count, potential_set in self.floor_case(combo, toppings, substat):
-                tmp = potential_set.value(substat)
                 if compare(potential_set.value(substat), required):
                     overall_set_requirements[substat] = potential_req_count
                     break
@@ -128,6 +125,8 @@ class Optimizer:
             if overall_set_requirements.get(substat) is None:
                 failures |= Prune.FLOOR_FAILURE
                 floor_failures.append(substat)
+
+        non_obj_count = sum(overall_set_requirements.values())
 
         ceil_failures = []
         for r in self.reqs.ceiling_reqs():  # valid ceiling check
@@ -153,15 +152,11 @@ class Optimizer:
             failures |= Prune.CONFLICTING_REQS_FAILURE
 
         if self.solution and len(combo) != 5:
-            # using overall set reqs to construct a best-case topping set means
-            # special care must be taken when updating cutting planes
-            # either overall set reqs has to be 'total valid value' aware or these cutting planes
-            # will have to follow the non-dom pattern with individual valid values added
-            combined = self.combined_valid_case(combo, toppings)
+            combined = self.combined_valid_case(combo, toppings, overall_set_requirements)
             if combined is None or combined < 0:
                 failures |= Prune.COMBINED_VALID_FAILURE
 
-            combined = self.combined_obj_case(combo, toppings)
+            combined = self.combined_obj_case(combo, toppings, overall_set_requirements)
             if combined is None or combined < 0:
                 failures |= Prune.COMBINED_OBJ_FAILURE
 
@@ -170,8 +165,10 @@ class Optimizer:
                 failures |= Prune.COMBINED_ALL_FAILURE
 
             if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
+                overall_set_requirements.pop(self.reqs.objective.types, None)
+
                 obj_value_met = False
-                for full_set in self.obj_special_case(combo, toppings):
+                for full_set in self.obj_special_case(combo, toppings, overall_set_requirements):
                     combined = full_set.value(self.reqs.objective.types)
                     if combined > 0 and self.reqs.objective.special_upper(
                         combined, full_set, combo
@@ -181,8 +178,6 @@ class Optimizer:
 
                 if not obj_value_met:
                     failures |= Prune.COMBINED_SPECIAL_OBJ_FAILURE
-
-                overall_set_requirements.pop(self.reqs.objective.types, None)
 
                 all_value_met = False
                 for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
@@ -198,15 +193,12 @@ class Optimizer:
                 if not all_value_met:
                     failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-        return failures, floor_failures, ceil_failures
+        return failures, floor_failures, ceil_failures, non_obj_count
 
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))
 
-    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
-        if set_reqs is None:
-            return combo
-
+    def fill_out_combo(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs):
         base_n = len(combo)
         combo = combo.copy()
         for req_substats, req_count in set_reqs.items():
@@ -253,10 +245,11 @@ class Optimizer:
             yield potential_req_count, potential_value, potential_set
 
     def combined_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
-        combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
+        if set_reqs is not None:
+            combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
 
-        if combo is None:
-            return None
+            if combo is None:
+                return None
 
         if len(combo) != 5:
             remaining_set = set(toppings).difference(set(combo))
@@ -276,13 +269,13 @@ class Optimizer:
         full_value += self.reqs.best_possible_set_effect(combo, substats, 0)
         return full_value
 
-    def combined_valid_case(self, combo: List[Topping], toppings: List[Topping]):
+    def combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
         full_value = self.combined_value(combo, toppings, self.reqs.valid_substats)
 
         if full_value is not None:
             return full_value - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
 
-    def combined_obj_case(self, combo: List[Topping], toppings: List[Topping]):
+    def combined_obj_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
         full_value = self.combined_value(combo, toppings, self.reqs.objective.types)
 
         if full_value is not None:
@@ -300,9 +293,10 @@ class Optimizer:
 
     # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
     def special_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
-        combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
-        if combo is None:
-            return
+        if set_reqs is not None:
+            combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
+            if combo is None:
+                return
 
         if len(combo) != 5:
             remaining_set = set(toppings).difference(set(combo))
@@ -321,8 +315,8 @@ class Optimizer:
         else:
             yield ToppingSet(combo)
 
-    def obj_special_case(self, combo: List[Topping], toppings: List[Topping]):
-        yield from self.special_case(combo, toppings, self.reqs.objective.types)
+    def obj_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
+        yield from self.special_case(combo, toppings, self.reqs.objective.types, set_reqs)
 
     def all_special_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
         yield from self.special_case(combo, toppings, self.reqs.all_substats, set_reqs)
