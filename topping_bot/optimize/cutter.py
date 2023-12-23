@@ -28,15 +28,15 @@ class Cutter:
         return {
             Prune.FLOOR_FAILURE: defaultdict(lambda: float("-inf")),
             Prune.CEILING_FAILURE: defaultdict(lambda: float("inf")),
-            Prune.COMBINED_VALID_FAILURE: float("-inf"),
-            Prune.COMBINED_OBJ_FAILURE: float("-inf"),
+            Prune.COMBINED_VALID_FAILURE: [],
+            Prune.COMBINED_OBJ_FAILURE: [],
             Prune.COMBINED_ALL_FAILURE: [],
             Prune.COMBINED_SPECIAL_OBJ_FAILURE: [],
             Prune.COMBINED_SPECIAL_ALL_FAILURE: [],
         }
 
     def update_planes(
-        self, topping: Topping, planes: dict, failures: Prune, floor_substats: List[Type], ceil_substats: List[Type], non_obj_count
+        self, topping: Topping, planes: dict, failures: Prune, floor_substats: List[Type], ceil_substats: List[Type]# , non_obj_count
     ):
         if Prune.FLOOR_FAILURE in failures:
             for s in floor_substats:
@@ -45,23 +45,23 @@ class Cutter:
             for s in ceil_substats:
                 planes[Prune.CEILING_FAILURE][s] = min(planes[Prune.CEILING_FAILURE][s], topping.value(s))
         if Prune.COMBINED_VALID_FAILURE in failures:
-            planes[Prune.COMBINED_VALID_FAILURE] = max(
-                planes[Prune.COMBINED_VALID_FAILURE], topping.value(self.reqs.valid_substats)
-            )
+            # TODO test replace this with non-obj set req count
+            planes[Prune.COMBINED_VALID_FAILURE].append(tuple(topping.value(s) for s in self.reqs.valid_substats))
         if Prune.COMBINED_OBJ_FAILURE in failures:
-            planes[Prune.COMBINED_OBJ_FAILURE] = max(
-                planes[Prune.COMBINED_OBJ_FAILURE], topping.value(self.reqs.objective.types)
-            )
+            # TODO test replace this with non-obj set req count
+            planes[Prune.COMBINED_OBJ_FAILURE].append(
+                tuple(topping.value(s) for s in self.reqs.valid_substats) + (topping.value(self.reqs.objective.types),))
         if Prune.COMBINED_ALL_FAILURE in failures:
-            # TODO replace this with non-obj set req count
-            planes[Prune.COMBINED_ALL_FAILURE].append(tuple(topping.value(s) for s in self.reqs.valid_substats) + (topping.value(self.reqs.all_substats),))
+            # TODO test replace this with non-obj set req count
+            planes[Prune.COMBINED_ALL_FAILURE].append(
+                tuple(topping.value(s) for s in self.reqs.valid_substats) + (topping.value(self.reqs.all_substats),))
         if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
             planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE].append(
-                tuple(topping.value(s) for s in self.reqs.objective.types)
+                tuple(topping.value(s) for s in self.reqs.valid_substats) + tuple(topping.value(s) for s in self.reqs.objective.types)
             )
         if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
             planes[Prune.COMBINED_SPECIAL_ALL_FAILURE].append(
-                (topping.value(self.reqs.valid_substats),) + tuple(topping.value(s) for s in self.reqs.objective.types)
+                tuple(topping.value(s) for s in self.reqs.valid_substats) + tuple(topping.value(s) for s in self.reqs.objective.types)
             )
 
     def cut_topping(self, topping: Topping, planes: dict):
@@ -69,15 +69,15 @@ class Cutter:
             return True
         if any(topping.value(s) >= floor for s, floor in planes[Prune.CEILING_FAILURE].items()):
             return True
-        if topping.value(self.reqs.valid_substats) <= planes[Prune.COMBINED_VALID_FAILURE]:
+        if self.is_dominated(topping, planes[Prune.COMBINED_VALID_FAILURE], *self.reqs.valid_substats):
             return True
-        if topping.value(self.reqs.objective.types) <= planes[Prune.COMBINED_OBJ_FAILURE]:
+        if self.is_dominated(topping, planes[Prune.COMBINED_OBJ_FAILURE], *self.reqs.valid_substats,self.reqs.objective.types):
             return True
         if self.is_dominated(topping, planes[Prune.COMBINED_ALL_FAILURE], *self.reqs.valid_substats, self.reqs.all_substats):
             return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.objective.types):  # star valid? no set reqs?
+        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):  # star valid? no set reqs?
             return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], self.reqs.valid_substats, *self.reqs.objective.types):  # star valid?
+        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):  # star valid?
             return True
         return False
 

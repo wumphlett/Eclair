@@ -97,7 +97,7 @@ class Optimizer:
             # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
             # if idx == 1 and i == 1:
             #     tqdm.write("TRIGGER")
-
+            # non_obj_count = self.reqs.fast_non_obj(combo, self.toppings[i])
             if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
@@ -115,10 +115,10 @@ class Optimizer:
         floor_failures = []
         overall_set_requirements = {}
         for r in self.reqs.floor_reqs():  # valid floor check
-            substat, compare, required = r.substat, r.op.compare, r.target
+            substat, required = r.substat, r.target
 
             for potential_req_count, potential_set in self.floor_case(combo, toppings, substat):
-                if compare(potential_set.value(substat), required):
+                if potential_set.value(substat) >= required:
                     overall_set_requirements[substat] = potential_req_count
                     break
 
@@ -126,7 +126,7 @@ class Optimizer:
                 failures |= Prune.FLOOR_FAILURE
                 floor_failures.append(substat)
 
-        non_obj_count = sum(overall_set_requirements.values())
+        # non_obj_count = sum(overall_set_requirements.values())
 
         ceil_failures = []
         for r in self.reqs.ceiling_reqs():  # valid ceiling check
@@ -193,7 +193,7 @@ class Optimizer:
                 if not all_value_met:
                     failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-        return failures, floor_failures, ceil_failures, non_obj_count
+        return failures, floor_failures, ceil_failures #, non_obj_count
 
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))
@@ -270,13 +270,13 @@ class Optimizer:
         return full_value
 
     def combined_valid_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_value = self.combined_value(combo, toppings, self.reqs.valid_substats)
+        full_value = self.combined_value(combo, toppings, self.reqs.valid_substats, set_reqs)
 
         if full_value is not None:
             return full_value - sum(self.reqs.floor(s) for s in self.reqs.valid_substats)
 
     def combined_obj_case(self, combo: List[Topping], toppings: List[Topping], set_reqs: dict):
-        full_value = self.combined_value(combo, toppings, self.reqs.objective.types)
+        full_value = self.combined_value(combo, toppings, self.reqs.objective.types, set_reqs)
 
         if full_value is not None:
             return full_value - self.reqs.objective.floor(self.solution)
