@@ -18,8 +18,6 @@ class Prune(Flag):
     COMBINED_ALL_FAILURE = auto()
     COMBINED_SPECIAL_ALL_FAILURE = auto()
 
-# TODO double check special objective shit
-
 class Cutter:
     def __init__(self, reqs: Requirements):
         self.reqs = reqs
@@ -36,7 +34,7 @@ class Cutter:
         }
 
     def update_planes(
-        self, topping: Topping, planes: dict, failures: Prune, floor_substats: List[Type], ceil_substats: List[Type]# , non_obj_count
+        self, topping: Topping, planes: dict, failures: Prune, floor_substats: List[Type], ceil_substats: List[Type]
     ):
         if Prune.FLOOR_FAILURE in failures:
             for s in floor_substats:
@@ -45,14 +43,11 @@ class Cutter:
             for s in ceil_substats:
                 planes[Prune.CEILING_FAILURE][s] = min(planes[Prune.CEILING_FAILURE][s], topping.value(s))
         if Prune.COMBINED_VALID_FAILURE in failures:
-            # TODO test replace this with non-obj set req count
             planes[Prune.COMBINED_VALID_FAILURE].append(tuple(topping.value(s) for s in self.reqs.valid_substats))
         if Prune.COMBINED_OBJ_FAILURE in failures:
-            # TODO test replace this with non-obj set req count
             planes[Prune.COMBINED_OBJ_FAILURE].append(
                 tuple(topping.value(s) for s in self.reqs.valid_substats) + (topping.value(self.reqs.objective.types),))
         if Prune.COMBINED_ALL_FAILURE in failures:
-            # TODO test replace this with non-obj set req count
             planes[Prune.COMBINED_ALL_FAILURE].append(
                 tuple(topping.value(s) for s in self.reqs.valid_substats) + (topping.value(self.reqs.all_substats),))
         if Prune.COMBINED_SPECIAL_OBJ_FAILURE in failures:
@@ -75,9 +70,9 @@ class Cutter:
             return True
         if self.is_dominated(topping, planes[Prune.COMBINED_ALL_FAILURE], *self.reqs.valid_substats, self.reqs.all_substats):
             return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):  # star valid? no set reqs?
+        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_OBJ_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):
             return True
-        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):  # star valid?
+        if self.is_dominated(topping, planes[Prune.COMBINED_SPECIAL_ALL_FAILURE], *self.reqs.valid_substats, *self.reqs.objective.types):
             return True
         return False
 
