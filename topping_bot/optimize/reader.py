@@ -153,9 +153,7 @@ def extract_unique_frames(fp: Path):
     video.release()
 
 
-current_min = 0
 def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbose=False):
-    global current_min
     cv2.destroyAllWindows()
 
     state = STATE.WAITING
