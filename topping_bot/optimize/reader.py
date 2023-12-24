@@ -9,6 +9,7 @@ import numpy as np
 from topping_bot.crk.toppings import INFO, Resonance, Topping
 from topping_bot.util.const import DEBUG_PATH, STATIC_PATH
 
+RESONANCE_THRESHOLD = 0.3
 KERNEL = np.ones((2, 2), np.uint8)
 READER_PATH = STATIC_PATH / "reader"
 TEMPLATES = {
@@ -207,13 +208,9 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
             substats.append((substat, value))
 
         # Resonance check
-        if substats:            
-            # MIN threshold found for max_val over 300 resonant toppings: 0.3076988756656647, std deviation of 0.4931
-            # MAX threshold found for max_val over 300 normal toppings: 0.2755431830883026, std deviation of 0.0004
-            # Determined that 0.3 should never be exceeded by normal toppings, and should always be exceeded by resonant toppings
-            RESONANCE_THRESHOLD = 0.3
-            
+        if substats:
             resonant_indicator_roi = frame[235:315, 1070:1160]
+            # TODO explore using cv2.TM_CCOEFF_NORMED for all template matching and dial in constants
             match = cv2.matchTemplate(resonant_indicator_roi, TEMPLATES["resonant_indicator"], cv2.TM_CCOEFF_NORMED)
             _, max_val, _, _ = cv2.minMaxLoc(match)
             
@@ -232,8 +229,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                 # to capture new resonance template
                 # cv2.imwrite(str(READER_PATH / "resonant" / "new.jpg"), title)
 
-                metatype = Resonance.NORMAL
-                # print("RESONANCE CHECK")
+                metatype = None
                 for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
                     template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
                     h, w = template.shape
@@ -242,19 +238,23 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                     x, y = min_loc
-                    # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.65)
                     if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
                         continue
-
-                    # if resonance == Resonance.SEA_SALT:
-                    #     tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
-                    #     tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    #     cv2.imshow("Dev", tmp)
-                    #     cv2.waitKey(0)
 
                     if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.6:
                         metatype = resonance
                         break
+
+                if metatype is None:
+                    if verbose:
+                        cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
+                        with open(DEBUG_PATH / f"{i}.txt", "w") as f:
+                            f.write("Metatype Detection Failure\n")
+                            f.write(f"{substats}\n")
+                    elif debug:
+                        ...
+                    else:
+                        raise ValueError
 
             topping = Topping(substats, resonance=metatype)
             if not topping.validate():
@@ -262,7 +262,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                     if verbose:
                         cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
                         with open(DEBUG_PATH / f"{i}.txt", "w") as f:
-                            f.write("VERBOSE\n")
+                            f.write("Validation Failure\n")
                             f.write(f"{substats}\n")
                     if not debug:
                         state = STATE.ENDED
@@ -270,7 +270,12 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                     continue
             elif last_topping is None or topping != last_topping:
                 if state == STATE.ENDED:
-                    if debug:
+                    if verbose:
+                        cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
+                        with open(DEBUG_PATH / f"{i}.txt", "w") as f:
+                            f.write("State Change Failure\n")
+                            f.write(f"{substats}\n")
+                    elif debug:
                         ...
                     else:
                         raise ValueError
