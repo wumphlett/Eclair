@@ -1,18 +1,13 @@
-import operator
-from collections import defaultdict
-from copy import deepcopy
-from decimal import Decimal
-from enum import Flag, auto
-from functools import cache
+from datetime import datetime
 from heapq import nlargest, nsmallest
-from typing import Callable, Iterable, List, Tuple, Union
+from typing import Iterable, List
 
 from tqdm import tqdm
 
-from topping_bot.crk.toppings import INFO, Substats, Topping, ToppingSet, Type
-from topping_bot.optimize.objectives import Special
+from topping_bot.crk.toppings import Substats, Topping, ToppingSet, Type
 from topping_bot.optimize.cutter import Prune, Cutter
 from topping_bot.optimize.requirements import Requirements
+from topping_bot.util.const import DEBUG
 
 
 class Optimizer:
@@ -51,7 +46,9 @@ class Optimizer:
         # presort based on objective requirements to promote finding feasible solution sooner
         self.toppings.sort(key=self.key)
 
+        start = datetime.now()
         yield from self.dfs([], 0)
+        DEBUG and tqdm.write(f"{reqs.name} : {(datetime.now() - start).total_seconds()}s")
 
     def key(self, topping: Topping):
         if self.reqs.objective.type == Type.VITALITY:
@@ -94,10 +91,6 @@ class Optimizer:
 
         planes = self.cutter.init_planes()
         for i in range(idx, len(self.toppings)):
-            # tqdm.write(f"{idx} {i} : {self.toppings[i]} : {self.key(self.toppings[i])}")
-            # if idx == 1 and i == 1:
-            #     tqdm.write("TRIGGER")
-            # non_obj_count = self.reqs.fast_non_obj(combo, self.toppings[i])
             if self.cutter.cut_topping(self.toppings[i], planes):
                 continue
 
@@ -125,8 +118,6 @@ class Optimizer:
             if overall_set_requirements.get(substat) is None:
                 failures |= Prune.FLOOR_FAILURE
                 floor_failures.append(substat)
-
-        # non_obj_count = sum(overall_set_requirements.values())
 
         ceil_failures = []
         for r in self.reqs.ceiling_reqs():  # valid ceiling check
