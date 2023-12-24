@@ -16,8 +16,8 @@ TEMPLATES = {
     "substat": {fp: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "substat").iterdir()},
     "digits": {fp: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "digits").iterdir()},
     "resonant": {fp.stem: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "resonant").iterdir()},
+    "resonant_indicator": cv2.imread(str(READER_PATH / "resonant" / "resonant_indicator_bw.png"), cv2.IMREAD_GRAYSCALE)
 }
-
 
 class STATE(Enum):
     WAITING = "Waiting"
@@ -153,7 +153,9 @@ def extract_unique_frames(fp: Path):
     video.release()
 
 
+current_min = 0
 def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbose=False):
+    global current_min
     cv2.destroyAllWindows()
 
     state = STATE.WAITING
@@ -206,42 +208,55 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
             substats.append((substat, value))
 
-        if substats:
-            # metatype check
-            title = frame[100:225, 200:-200]
+        # Resonance check
+        if substats:            
+            # MIN threshold found for max_val over 300 resonant toppings: 0.3076988756656647, std deviation of 0.4931
+            # MAX threshold found for max_val over 300 normal toppings: 0.2755431830883026, std deviation of 0.0004
+            # Determined that 0.3 should never be exceeded by normal toppings, and should always be exceeded by resonant toppings
+            RESONANCE_THRESHOLD = 0.3
+            
+            resonant_indicator_roi = frame[235:315, 1070:1160]
+            match = cv2.matchTemplate(resonant_indicator_roi, TEMPLATES["resonant_indicator"], cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, _ = cv2.minMaxLoc(match)
+            
+            if max_val < RESONANCE_THRESHOLD:
+                metatype = Resonance.NORMAL
+            else:
+                # metatype check
+                title = frame[100:225, 200:-200]
 
-            active_pixels = np.stack(np.where(title == 0))
-            if active_pixels.size == 0:
-                return None
+                active_pixels = np.stack(np.where(title == 0))
+                if active_pixels.size == 0:
+                    return None
 
-            top_left = np.min(active_pixels, axis=1).astype(np.int32)
+                top_left = np.min(active_pixels, axis=1).astype(np.int32)
 
-            # to capture new resonance template
-            # cv2.imwrite(str(READER_PATH / "resonant" / "new.jpg"), title)
+                # to capture new resonance template
+                # cv2.imwrite(str(READER_PATH / "resonant" / "new.jpg"), title)
 
-            metatype = Resonance.NORMAL
-            # print("RESONANCE CHECK")
-            for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
-                template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
-                h, w = template.shape
+                metatype = Resonance.NORMAL
+                # print("RESONANCE CHECK")
+                for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
+                    template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
+                    h, w = template.shape
 
-                result = cv2.matchTemplate(title, template, cv2.TM_SQDIFF)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+                    result = cv2.matchTemplate(title, template, cv2.TM_SQDIFF)
+                    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-                x, y = min_loc
-                # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.65)
-                if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
-                    continue
+                    x, y = min_loc
+                    # print(resonance, "Cont", abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15, cv2.norm(title[y : y + h, x : x + w], template), h * w * 0.65)
+                    if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
+                        continue
 
-                # if resonance == Resonance.SEA_SALT:
-                #     tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
-                #     tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                #     cv2.imshow("Dev", tmp)
-                #     cv2.waitKey(0)
+                    # if resonance == Resonance.SEA_SALT:
+                    #     tmp = cv2.cvtColor(title, cv2.COLOR_GRAY2BGR)
+                    #     tmp = cv2.rectangle(tmp, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    #     cv2.imshow("Dev", tmp)
+                    #     cv2.waitKey(0)
 
-                if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.6:
-                    metatype = resonance
-                    break
+                    if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.6:
+                        metatype = resonance
+                        break
 
             topping = Topping(substats, resonance=metatype)
             if not topping.validate():
