@@ -216,6 +216,7 @@ cookies:
     type: Charge
     position: Front
     cd: 15
+    duration_skill: True
     aliases:
       - Cap
       - Capsa
@@ -264,6 +265,7 @@ cookies:
     type: Ranged
     position: Rear
     cd: 9
+    duration_skill: True
     aliases:
       - Creme Brulee
       - Brulee
@@ -649,6 +651,7 @@ cookies:
     type: Support
     position: Middle
     cd: 13
+    duration_skill: True
     aliases: []
   Mango:
     id: 154
@@ -678,6 +681,7 @@ cookies:
     type: Ranged
     position: Rear
     cd: 13
+    duration_skill: True
     aliases: []
   Strawberry Crepe:
     id: 518
@@ -879,6 +883,7 @@ cookies:
     type: Healing
     position: Front
     cd: 12
+    duration_skill: True
     aliases:
       - Yeti
   Snapdragon:
