@@ -26,6 +26,38 @@ class STATE(Enum):
     ENDED = "Ended"
 
 
+def nothing(x):
+    pass
+
+def roi_selector(input_frame):
+    # Create a window and trackbars to adjust the region of interest
+    cv2.namedWindow('ROI Selector', cv2.WINDOW_NORMAL)
+    # cv2.resizeWindow('ROI Selector', 800, 600)
+    cv2.createTrackbar('Offset X', 'ROI Selector', 0, input_frame.shape[1], nothing)
+    cv2.createTrackbar('Offset Y', 'ROI Selector', 0, input_frame.shape[0], nothing)
+    cv2.createTrackbar('Width', 'ROI Selector', 100, input_frame.shape[1], nothing)
+    cv2.createTrackbar('Height', 'ROI Selector', 100, input_frame.shape[0], nothing)
+
+    while True:
+        # Get current positions of trackbars
+        offset_x = cv2.getTrackbarPos('Offset X', 'ROI Selector')
+        offset_y = cv2.getTrackbarPos('Offset Y', 'ROI Selector')
+        width = cv2.getTrackbarPos('Width', 'ROI Selector')
+        height = cv2.getTrackbarPos('Height', 'ROI Selector')
+
+        # Draw the ROI on the frame
+        display_frame = input_frame.copy()
+        cv2.rectangle(display_frame, (offset_x, offset_y), (offset_x + width, offset_y + height), (0, 255, 0), 2)
+        cv2.imshow('ROI Selector', display_frame)
+
+        # Wait for the 'q' key to quit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cv2.destroyAllWindows()
+    return offset_x, offset_y, width, height
+
+
 def read_toppings(fp: Path):
     toppings = []
     with open(fp) as f:

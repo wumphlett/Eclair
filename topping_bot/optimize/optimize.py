@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from topping_bot.crk.toppings import Substats, Topping, ToppingSet, Type
 from topping_bot.optimize.cutter import Prune, Cutter
+from topping_bot.optimize.objectives import Special
 from topping_bot.optimize.requirements import Requirements
 from topping_bot.util.const import DEBUG
 
@@ -155,7 +156,7 @@ class Optimizer:
             if combined is None or combined < 0:
                 failures |= Prune.COMBINED_ALL_FAILURE
 
-            if self.reqs.objective.type in (Type.E_DMG, Type.VITALITY):
+            if isinstance(self.reqs.objective, Special):
                 overall_set_requirements.pop(self.reqs.objective.types, None)
 
                 obj_value_met = False
@@ -282,7 +283,15 @@ class Optimizer:
                 - self.reqs.objective.floor(self.solution)
             )
 
-    # if a special obj (non-combo) ever specifies more than 2 substats, this will have to be generalized
+    def sum_to_n(self, n, size):
+        if size == 1:
+            yield [n]
+            return
+
+        for i in range(0, n + 1):
+            for tail in self.sum_to_n(n - i, size - 1):
+                yield [i] + tail
+
     def special_case(self, combo: List[Topping], toppings: List[Topping], substats: Substats, set_reqs: dict = None):
         if set_reqs is not None:
             combo = self.fill_out_combo(combo, toppings, substats, set_reqs)
@@ -293,14 +302,14 @@ class Optimizer:
             remaining_set = set(toppings).difference(set(combo))
 
             n = 5 - len(combo)
-            first_substat = (topping for topping in remaining_set if topping.flavor == self.reqs.objective.types[0])
-            first_pool = self.floor_pool(n, first_substat, substats)
-            second_substat = (topping for topping in remaining_set if topping.flavor == self.reqs.objective.types[1])
-            second_pool = self.floor_pool(n, second_substat, substats)
+            generators = [(topping for topping in remaining_set if topping.flavor == substat) for substat in self.reqs.objective.types]
+            pools = [self.floor_pool(n, gen, substats) for gen in generators]
 
-            for first_count in range(n + 1):
-                second_count = n - first_count
-                potential_set = combo + first_pool[:first_count] + second_pool[:second_count]
+            for partitions in self.sum_to_n(n, len(pools)):
+                potential_set = combo.copy()
+                for i, partition in enumerate(partitions):
+                    potential_set += pools[i][:partition]
+
                 if len(potential_set) == 5:
                     yield ToppingSet(potential_set)
         else:
