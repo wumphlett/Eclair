@@ -136,7 +136,7 @@ async def filter_requirements_files(ctx, include_default=True, include_personal=
             requirement_files.append(child)
         elif include_default and child.stem.startswith(f"{guild.fp}-"):
             requirement_files.append(child)
-    requirement_files.sort(key=lambda x: x.stem, reverse=True)
+    requirement_files.sort(key=lambda x: (not x.stem.startswith(f"{guild.fp}-"), x.stem))
 
     options = []
 

@@ -153,7 +153,7 @@ class Requirements:
         objective = Type(requirement["max"])
 
         if objective == Type.COMBO:
-            return Combo([Type(substat) for substat in requirement["substats"]])
+            return Combo([Type(substat) for substat in requirement["substats"]], cookie_mods)
         elif objective == Type.E_DMG:
             for substat in cookie_mods:
                 cookie_mods[substat] += Decimal(requirement.get(substat.value, "0"))
