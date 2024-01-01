@@ -366,7 +366,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             saves = json.load(f)
 
         options = [
-            SelectOption(label=v.split(maxsplit=1)[1], value=k, emoji=v.split(maxsplit=1)[0]) for k, v in saves.items()
+            SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()
         ]
 
         save_view = SaveView()
@@ -405,7 +405,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             saves = json.load(f)
 
         options = [
-            SelectOption(label=v.split(maxsplit=1)[1], value=k, emoji=v.split(maxsplit=1)[0]) for k, v in saves.items()
+            SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()
         ]
 
         save_view = SaveView()
