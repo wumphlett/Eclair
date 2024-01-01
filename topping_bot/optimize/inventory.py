@@ -151,7 +151,7 @@ class Grammar:
         if type(operand) == str:
             operand = [operand]
         operand = tuple(Type(s) for s in operand)
-        substats = (s for s, v in topping.substats[1:])
+        substats = list(s for s, v in topping.substats[1:])
         return all(OPERATORS[operator](substats, s) for s in operand)
 
     def eval_id_spec(self, parsed: pp.ParseResults, idx: int, topping: Topping):
