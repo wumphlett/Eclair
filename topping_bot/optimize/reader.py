@@ -263,10 +263,9 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
         # Resonance check
         if substats:
             resonant_indicator_roi = frame[235:315, 1070:1160]
-            match = cv2.matchTemplate(resonant_indicator_roi, TEMPLATES["resonant_indicator"], cv2.TM_CCOEFF_NORMED)
-            _, max_val, _, _ = cv2.minMaxLoc(match)
 
-            if max_val < RESONANCE_THRESHOLD:
+            h, w = resonant_indicator_roi.shape
+            if np.count_nonzero(resonant_indicator_roi == 0) / (h * w) < 0.5:
                 metatype = Resonance.NORMAL
             else:
                 # metatype check
@@ -290,7 +289,7 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
                     x, y = min_loc
 
-                    if (error := cv2.norm(title[y : y + h, x : x + w], template, cv2.NORM_L1) * h * w) < metatype_error:
+                    if (error := cv2.norm(title[y : y + h, x : x + w], template, cv2.NORM_L1) / (h * w)) < metatype_error:
                         metatype = resonance
                         metatype_error = error
 
