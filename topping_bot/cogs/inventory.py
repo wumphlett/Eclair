@@ -7,9 +7,11 @@ from multiprocessing.shared_memory import SharedMemory
 import discord
 from discord.ext import commands
 from discord.ext.commands import Cog, parameter
+import pyparsing as pp
 from tqdm import tqdm
 
-from topping_bot.optimize.reader import read_toppings
+from topping_bot.optimize.inventory import Inventory as ToppingInventory
+from topping_bot.optimize.reader import write_toppings
 from topping_bot.util.common import (
     admin_only,
     approved_guild_only,
@@ -20,9 +22,7 @@ from topping_bot.util.common import (
 )
 from topping_bot.util.const import CONFIG, DATA_PATH, DEBUG_PATH, TMP_PATH
 from topping_bot.util.cpu import full_extraction
-from topping_bot.util.image import toppings_to_images
 from topping_bot.util.parallel import RUNNING_CPU_TASK, SEMAPHORE
-from topping_bot.util.converters import IndicesConverter
 from topping_bot.ui.common import Paginator, RemoveToppingsMenu
 
 
@@ -62,7 +62,7 @@ class Inventory(Cog, description="View and update your topping inventory"):
         )
 
     @commands.group(brief="View inv", description="View your topping inventory", invoke_without_command=True)
-    async def inv(self, ctx):
+    async def inv(self, ctx, *query: str):
         fp = DATA_PATH / f"{ctx.message.author.id}.csv"
         if not fp.exists():
             await send_msg(
@@ -76,9 +76,9 @@ class Inventory(Cog, description="View and update your topping inventory"):
             )
             return
 
-        toppings = read_toppings(fp)
-
-        if not toppings:
+        query = " ".join(query).strip()
+        inventory = ToppingInventory.from_file(fp)
+        if not inventory.toppings:
             await send_msg(
                 ctx,
                 title="Err: No Topping Inventory",
@@ -90,27 +90,50 @@ class Inventory(Cog, description="View and update your topping inventory"):
             )
             return
 
+        if query:
+            try:
+                inventory = inventory.filter(query)
+            except pp.ParseException as exc:
+                await send_msg(
+                    ctx,
+                    title="Err: Invalid Topping Filter",
+                    description=exc.explain(depth=0),
+                )
+                return
+
+            if len(inventory.toppings) == 0:
+                await send_msg(
+                    ctx,
+                    title="Err: Strict Topping Filter",
+                    description=[
+                        "The specified topping filter leaves zero toppings for viewing",
+                        "",
+                        "Please relax the filter and try again",
+                    ],
+                )
+                return
+
         async with ctx.typing():
             channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
 
             msgs = []
             embed_images = []
 
-            images = toppings_to_images(toppings, ctx.message.author.id, show_index=True)
+            images = inventory.to_images(ctx.message.author.id)
 
             for subset in (images[i : i + 10] for i in range(0, len(images), 10)):
                 msg = await channel.send(files=[discord.File(image, filename=image.name) for image in subset])
                 embed_images.extend([attachment.url for attachment in msg.attachments])
                 msgs.append(msg)
 
-        await Paginator().start(
-            ctx,
-            pages=[
-                await new_embed(title="**Your Topping Inventory**", image=image, thumbnail=False)
-                for image in embed_images
-            ],
-            messages=msgs,
-        )
+            await Paginator().start(
+                ctx,
+                pages=[
+                    await new_embed(title="**Your Topping Inventory**", image=image, thumbnail=False)
+                    for image in embed_images
+                ],
+                messages=msgs,
+            )
 
         for fp in images:
             fp.unlink(missing_ok=True)
@@ -240,8 +263,22 @@ class Inventory(Cog, description="View and update your topping inventory"):
 
         fp.unlink(missing_ok=True)
 
+        inventory = ToppingInventory.from_file(topping_fp).filter("dups")
+
+        if len(inventory.toppings) > 0:
+            await send_msg(
+                ctx,
+                title="Duplicate Toppings",
+                description=[
+                    f"You have {len(inventory.toppings)} duplicate topping{'s' if len(inventory.toppings) != 1 else ''}",
+                    "",
+                    "View them with '!inv dups' or delete them with '!inv delete dups'",
+                ],
+                thumbnail=False,
+            )
+
     @inv.command(aliases=["del"], brief="Delete inv", description="Delete your topping inventory")
-    async def delete(self, ctx):
+    async def delete(self, ctx, *query: str):
         topping_fp = DATA_PATH / f"{ctx.message.author.id}.csv"
 
         if not topping_fp.exists():
@@ -254,152 +291,107 @@ class Inventory(Cog, description="View and update your topping inventory"):
                     "Use !tutorial to learn more",
                 ],
             )
-        else:
-            embed_options = {
-                "title": "Delete Topping Inventory",
-                "description": "Would you like to remove all toppings from your inventory?",
-                "thumbnail": False,
-            }
-            inner_embed_options = {
-                "title": "CONFIRM REMOVE TOPPINGS",
-                "description": "ARE YOU SURE YOU WANT TO REMOVE ALL TOPPINGS FROM YOUR INVENTORY?",
-                "thumbnail": False,
-            }
-
-            await RemoveToppingsMenu(timeout=600).start(
-                ctx,
-                ctx.message.author,
-                toppings=[],
-                fp=topping_fp,
-                embed_options=embed_options,
-                inner_embed_options=inner_embed_options,
-            )
-
-    @commands.command(checks=[guild_only], brief="DEPRECATED", description="DEPRECATED | Use !inv add")
-    async def appendinv(self, ctx):
-        await send_msg(
-            ctx,
-            title="Err: Use !inv add",
-            description=[
-                "!appendinv has been DEPRECATED, please use '!inv add' instead",
-                "Use !tutorial to learn more",
-            ],
-        )
-
-    @commands.command(
-        checks=[guild_only],
-        aliases=["uploadinv"],
-        brief="DEPRECATED",
-        description="DEPRECATED | Use !inv delete & !inv add",
-    )
-    async def updateinv(self, ctx):
-        await send_msg(
-            ctx,
-            title="Err: Use !inv delete & !inv add",
-            description=[
-                "!updateinv has been DEPRECATED, please use '!inv delete' & '!inv add' instead",
-                "Use !tutorial to learn more",
-            ],
-        )
-
-    @inv.command(aliases=["delt"], brief="Del top", description="Delete topping(s) from inventory by index")
-    async def deletetopping(
-        self,
-        ctx,
-        indices=parameter(
-            description="indices of toppings in inventory separated by space (up to 25 toppings)",
-            default=[],
-            converter=IndicesConverter[int],
-        ),
-    ):
-        if not 1 <= len(indices) <= 25:
-            await send_msg(
-                ctx,
-                title="Err: Unexpected Number of Toppings",
-                description=[
-                    "You have specified # of toppings outside of the expected range.",
-                    "Please only include between 1 to 25 toppings.",
-                    "",
-                    "Use !help inv deletetopping to learn more.",
-                ],
-            )
             return
 
-        fp = DATA_PATH / f"{ctx.message.author.id}.csv"
-
-        if not fp.exists():
-            await send_msg(
-                ctx,
-                title="Err: No Topping Inventory",
-                description=[
-                    "You have not submitted a topping video.",
-                    "Please use !updateinv <video> to update your inventory.",
-                    "Use !tutorial to learn more.",
-                ],
-            )
-            return
-
-        toppings = read_toppings(fp)
-
-        if not toppings:
+        query = " ".join(query).strip()
+        inventory = ToppingInventory.from_file(topping_fp)
+        if not inventory.toppings:
             await send_msg(
                 ctx,
                 title="Err: No Topping Inventory",
                 description=[
                     "Your toppings on file are empty.",
-                    "Please use !updateinv <video> to update your inventory.",
+                    "Please use !inv add <video> to update your inventory.",
                     "Use !tutorial to learn more.",
                 ],
             )
             return
 
-        invalid_indices = list(filter(lambda i: not 0 <= i <= len(toppings) - 1, indices))
+        if query:
+            try:
+                filtered_inventory = inventory.filter(query)
+            except pp.ParseException as exc:
+                await send_msg(
+                    ctx,
+                    title="Err: Invalid Topping Filter",
+                    description=exc.explain(depth=0),
+                )
+                return
 
-        if invalid_indices:
-            await send_msg(
-                ctx,
-                title="Err: Index Out of Range",
-                description=[
-                    "At least one of the specified toppings is outside the expected range.",
-                    "Please check that you provided valid indices.",
-                    "",
-                    f"The invalid indices: {', '.join(str(i) for i in invalid_indices)}.",
-                    "",
-                    "Use !help inv deletetopping to learn more.",
-                ],
-            )
+            if len(filtered_inventory.toppings) == 0:
+                await send_msg(
+                    ctx,
+                    title="Err: Strict Topping Filter",
+                    description=[
+                        "The specified topping filter leaves zero toppings for deletion",
+                        "",
+                        "Please relax the filter and try again",
+                    ],
+                )
+                return
+
+        if query:
+            async with ctx.typing():
+                channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
+
+                msgs = []
+                embed_images = []
+
+                images = filtered_inventory.to_images(ctx.message.author.id)
+
+                for subset in (images[i : i + 10] for i in range(0, len(images), 10)):
+                    msg = await channel.send(files=[discord.File(image, filename=image.name) for image in subset])
+                    embed_images.extend([attachment.url for attachment in msg.attachments])
+                    msgs.append(msg)
+
+                remove_toppings = RemoveToppingsMenu()
+                await remove_toppings.start(ctx, pages=embed_images, messages=msgs)
+
+            for fp in images:
+                fp.unlink(missing_ok=True)
+
+        else:
+            remove_toppings = RemoveToppingsMenu()
+            await remove_toppings.start(ctx)
+
+        timeout = await remove_toppings.wait()
+        if timeout or not remove_toppings.result:
             return
 
-        toppings_to_remove = [row for index, row in enumerate(toppings) if index in indices]
-        remaining_toppings = [row for index, row in enumerate(toppings) if index not in indices]
+        if query:
+            inventory = inventory.filter(f"not ({query})")
+            write_toppings((t for _, t in inventory.toppings), topping_fp)
+        else:
+            topping_fp.unlink(missing_ok=True)
 
-        # generate preview image
-        channel = self.bot.get_channel(CONFIG["community"]["img-dump"])
-        image = toppings_to_images(toppings_to_remove, ctx.message.author, show_index=False)[0]
-        temp_msg = await channel.send(file=discord.File(image, filename=image.name))
-        embed_image = [attachment.url for attachment in temp_msg.attachments][0]
-
-        embed_options = {
-            "title": "Delete Individual Toppings",
-            "description": "Would you like to remove these toppings from your inventory?",
-            "image": embed_image,
-            "thumbnail": False,
-        }
-        inner_embed_options = {
-            "title": "CONFIRM REMOVE TOPPINGS",
-            "description": "ARE YOU SURE YOU WANT TO REMOVE THESE TOPPINGS FROM YOUR INVENTORY?",
-            "image": embed_image,
-            "thumbnail": False,
-        }
-
-        await RemoveToppingsMenu(timeout=600).start(
-            ctx,
-            ctx.message.author,
-            toppings=remaining_toppings,
-            fp=fp,
-            embed_options=embed_options,
-            inner_embed_options=inner_embed_options,
+    @inv.command(aliases=["h"], brief="Learn inv", description="Learn about how inv filters work")
+    async def help(self, ctx):
+        embed = await new_embed(
+            title="__**Inventory Filters Guide**__",
+            description=[
+                "**FILTERS**",
+                "```Both '!inv' and '!inv delete' support optional filters for viewing/deletion```",
+                "**TYPES**",
+                "``` - Resonance : e.g. !inv resonance == Trio",
+                " - Flavor : e.g. !inv delete flavor != ATK",
+                " - Substats : e.g. !inv ATK in subs | !inv delete (ATK SPD, Cooldown) in substats",
+                " - ID : e.g. !inv delete 123, 456, 789",
+                " - Duplicates : e.g. !inv delete duplicates```",
+                "**COMBINATIONS**",
+                "```All of these specifiers can be combined with logical operators (not, and, or)",
+                " - e.g. !inv res is Normal and flavor == Cooldown",
+                "   ↳ Would show all non-resonant chocolate toppings",
+                "",
+                "Be sure to use parenthesis to override operator precedence```",
+                "**ALL OPERATORS**",
+                "``` - equals : == | is",
+                " - not equals : != | is not",
+                " - in : in",
+                " - not in : not in```",
+            ],
+            wrap=False,
         )
+        await ctx.reply(embed=embed)
 
     @commands.command(checks=[admin_only], brief="Debug video", description="Debug video")
     async def debug(self, ctx, video_id, verbose=False):
@@ -492,3 +484,47 @@ class Inventory(Cog, description="View and update your topping inventory"):
                 ],
                 wrap=False,
             )
+
+    @commands.command(checks=[guild_only], brief="DEPRECATED", description="DEPRECATED | Use !inv add")
+    async def appendinv(self, ctx):
+        await send_msg(
+            ctx,
+            title="Err: Use !inv add",
+            description=[
+                "!appendinv has been DEPRECATED, please use '!inv add' instead",
+                "Use !tutorial to learn more",
+            ],
+        )
+
+    @commands.command(
+        checks=[guild_only],
+        aliases=["uploadinv"],
+        brief="DEPRECATED",
+        description="DEPRECATED | Use !inv delete & !inv add",
+    )
+    async def updateinv(self, ctx):
+        await send_msg(
+            ctx,
+            title="Err: Use !inv delete & !inv add",
+            description=[
+                "!updateinv has been DEPRECATED, please use '!inv delete' & '!inv add' instead",
+                "Use !tutorial to learn more",
+            ],
+        )
+
+    @inv.command(aliases=["delt"], brief="DEPRECATED", description="DEPRECATED")
+    async def deletetopping(
+        self,
+        ctx,
+        indices=parameter(
+            description="indices of toppings in inventory separated by space (up to 25 toppings)",
+        ),
+    ):
+        await send_msg(
+            ctx,
+            title="Err: Use !inv delete <index list>",
+            description=[
+                "!inv deletetopping has been DEPRECATED, please use '!inv delete <index list>' instead",
+                "Use !inv help to learn more",
+            ],
+        )

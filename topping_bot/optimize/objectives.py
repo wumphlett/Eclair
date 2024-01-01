@@ -5,7 +5,7 @@ import math
 from typing import List
 
 
-from topping_bot.crk.toppings import Topping, ToppingSet, Type
+from topping_bot.optimize.toppings import Topping, ToppingSet, Type
 
 
 class Objective:
@@ -64,7 +64,9 @@ class Combo(Special):
         """Maximum Combo value possible given combined value pool"""
         combo = ToppingSet(combo)
         for substat in self.objectives:
-            combined -= (combo.value(substat) - min(combo.value(substat) / Decimal(100), self.bounds[substat]["max"]) * Decimal(100))
+            combined -= combo.value(substat) - min(  # don't min check, always want to maximize
+                combo.value(substat) / Decimal(100), self.bounds[substat]["max"]
+            ) * Decimal(100)
         return combined
 
     @cache
@@ -117,8 +119,17 @@ class EDMG(Special):
         combined = combined / Decimal("100") + self.base_atk + self.base_crit
         optimal_atk = (combined * (self.crit_dmg - 1) + (1 + self.mult)) / (2 * (self.crit_dmg - 1))
 
-        ideal_possible_atk = max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"]) + self.base_atk
-        ideal_possible_crit = max(min(max(crit, combined - ideal_possible_atk) - self.base_crit, self.bounds[Type.CRIT]["max"]),self.bounds[Type.CRIT]["min"]) + self.base_crit
+        ideal_possible_atk = (
+            max(min(max(atk, optimal_atk) - self.base_atk, self.bounds[Type.ATK]["max"]), self.bounds[Type.ATK]["min"])
+            + self.base_atk
+        )
+        ideal_possible_crit = (
+            max(
+                min(max(crit, combined - ideal_possible_atk) - self.base_crit, self.bounds[Type.CRIT]["max"]),
+                self.bounds[Type.CRIT]["min"],
+            )
+            + self.base_crit
+        )
         ideal_possible_atk = combined - ideal_possible_crit
 
         return self.e_dmg(ideal_possible_atk, ideal_possible_crit)
@@ -172,14 +183,24 @@ class Vitality(Special):
         combined = combined / Decimal("100")
 
         _, bonus = full_set.set_effect(Type.DMGRES)
-        obj_count = len([top for top in full_set.toppings[len(combo.toppings):] if top.flavor == Type.DMGRES])
-        max_additional_dmgres = ((obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus) / Decimal("100")
+        obj_count = len([top for top in full_set.toppings[len(combo.toppings) :] if top.flavor == Type.DMGRES])
+        max_additional_dmgres = (
+            (obj_count * (Decimal("6") + Decimal("4.1"))) + (5 - obj_count - len(combo.toppings)) * Decimal("6") + bonus
+        ) / Decimal("100")
 
-        ideal_possible_dmgres = min(min(combined, dmgres + max_additional_dmgres), self.bounds[Type.DMGRES]["max"])  # don't min check, always want to maximize
-        ideal_possible_hp = max(min(max(hp, combined - ideal_possible_dmgres), self.bounds[Type.DMGRES]["max"]), self.bounds[Type.DMGRES]["min"])
+        ideal_possible_dmgres = min(
+            min(combined, dmgres + max_additional_dmgres), self.bounds[Type.DMGRES]["max"]
+        )  # don't min check, always want to maximize
+        ideal_possible_hp = max(
+            min(max(hp, combined - ideal_possible_dmgres), self.bounds[Type.DMGRES]["max"]),
+            self.bounds[Type.DMGRES]["min"],
+        )
         ideal_possible_dmgres = combined - ideal_possible_hp
 
-        ideal_possible_hp, ideal_possible_dmgres = ideal_possible_hp + self.base_hp, ideal_possible_dmgres + self.base_dmgres
+        ideal_possible_hp, ideal_possible_dmgres = (
+            ideal_possible_hp + self.base_hp,
+            ideal_possible_dmgres + self.base_dmgres,
+        )
 
         return self.vitality(ideal_possible_hp, ideal_possible_dmgres)
 

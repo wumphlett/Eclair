@@ -36,10 +36,12 @@ class Stats(Cog, description="View build related statistics"):
     async def basestat(
         self,
         ctx,
-        before=parameter(description="before diff%", converter=int),
-        after=parameter(description="after diff%", converter=int),
+        before=parameter(description="before diff%"),
+        after=parameter(description="after diff%"),
         diff=parameter(description="difference", converter=Decimal, default=9),
     ):
+        before = int("".join(c for c in before if c.isnumeric()))
+        after = int("".join(c for c in after if c.isnumeric()))
         await send_msg(
             ctx,
             title="Your Base STAT% Buff",

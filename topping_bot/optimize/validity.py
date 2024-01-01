@@ -1,27 +1,16 @@
 import operator
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from heapq import nlargest, nsmallest
 
-from pyparsing import (
-    CaselessLiteral,
-    Literal,
-    MatchFirst,
-    Opt,
-    StringStart as Start,
-    StringEnd as End,
-    Word,
-    nums,
-    printables,
+import pyparsing as pp
+
+from topping_bot.optimize.toppings import INFO, Type
+
+
+SUBSTATS = pp.MatchFirst(
+    [pp.CaselessLiteral(substat.value) for substat in sorted(list(INFO.keys()), key=lambda x: x.value, reverse=True)]
 )
-
-from topping_bot.crk.toppings import INFO, Type
-
-
-SUBSTATS = MatchFirst(
-    [CaselessLiteral(substat.value) for substat in sorted(list(INFO.keys()), key=lambda x: x.value, reverse=True)]
-)
-TARGET = Word(nums) + Opt("." + Word(nums))
+TARGET = pp.Word(pp.nums) + pp.Opt("." + pp.Word(pp.nums))
 
 
 class Operator:
@@ -67,7 +56,7 @@ class Normal(Validity):
     DMG Resist >= 30
     """
 
-    INEQUALITIES = MatchFirst([Literal(op) for op in (">=", "<=", ">", "<")])
+    INEQUALITIES = pp.MatchFirst([pp.Literal(op) for op in (">=", "<=", ">", "<")])
 
     def __init__(self, substat: Type, op: Operator, target: Decimal):
         self.substat = substat
@@ -82,14 +71,14 @@ class Normal(Validity):
 
     @classmethod
     def parse(cls, req_str: str):
-        if r := (Start() + SUBSTATS("substat") + cls.INEQUALITIES("op") + TARGET("target") + End()).search_string(
-            req_str
-        ):
+        if r := (
+            pp.StringStart() + SUBSTATS("substat") + cls.INEQUALITIES("op") + TARGET("target") + pp.StringEnd()
+        ).search_string(req_str):
             r = r[0].as_dict()
             return cls(Type(r["substat"]), Operator(r["op"]), Decimal("".join(r["target"])))
-        elif r := (Start() + TARGET("target") + cls.INEQUALITIES("op") + SUBSTATS("substat") + End()).search_string(
-            req_str
-        ):
+        elif r := (
+            pp.StringStart() + TARGET("target") + cls.INEQUALITIES("op") + SUBSTATS("substat") + pp.StringEnd()
+        ).search_string(req_str):
             r = r[0].as_dict()
             return cls(Type(r["substat"]), Operator(r["op"]).invert(), Decimal("".join(r["target"])))
 
@@ -113,8 +102,8 @@ class Range(Validity):
     27 <= Cooldown <= 29
     """
 
-    LESS = MatchFirst([Literal(op) for op in ("<=", "<")])
-    MORE = MatchFirst([Literal(op) for op in (">=", ">")])
+    LESS = pp.MatchFirst([pp.Literal(op) for op in ("<=", "<")])
+    MORE = pp.MatchFirst([pp.Literal(op) for op in (">=", ">")])
 
     def __init__(self, l_target: Decimal, l_op: Operator, substat: Type, h_op: Operator, h_target: Decimal):
         self.substat = substat
@@ -129,13 +118,13 @@ class Range(Validity):
     @classmethod
     def parse(cls, req_str: str):
         if r := (
-            Start()
+            pp.StringStart()
             + TARGET("l_target")
             + cls.LESS("l_op")
             + SUBSTATS("substat")
             + cls.LESS("h_op")
             + TARGET("h_target")
-            + End()
+            + pp.StringEnd()
         ).search_string(req_str):
             r = r[0].as_dict()
             return cls(
@@ -146,13 +135,13 @@ class Range(Validity):
                 Decimal("".join(r["h_target"])),
             )
         elif r := (
-            Start()
+            pp.StringStart()
             + TARGET("l_target")
             + cls.MORE("l_op")
             + SUBSTATS("substat")
             + cls.MORE("h_op")
             + TARGET("h_target")
-            + End()
+            + pp.StringEnd()
         ).search_string(req_str):
             r = r[0].as_dict()
             return cls(
@@ -175,7 +164,7 @@ class Equality(Validity):
     Cooldown == 28.5
     """
 
-    EQUALITY = MatchFirst([Literal(op) for op in ("==", "=")])
+    EQUALITY = pp.MatchFirst([pp.Literal(op) for op in ("==", "=")])
 
     def __init__(self, substat: Type, target: Decimal):
         self.substat = substat
@@ -186,10 +175,14 @@ class Equality(Validity):
 
     @classmethod
     def parse(cls, req_str: str):
-        if r := (Start() + SUBSTATS("substat") + cls.EQUALITY + TARGET("target") + End()).search_string(req_str):
+        if r := (
+            pp.StringStart() + SUBSTATS("substat") + cls.EQUALITY + TARGET("target") + pp.StringEnd()
+        ).search_string(req_str):
             r = r[0].as_dict()
             return cls(Type(r["substat"]), Decimal("".join(r["target"])))
-        elif r := (Start() + TARGET("target") + cls.EQUALITY + SUBSTATS("substat") + End()).search_string(req_str):
+        elif r := (
+            pp.StringStart() + TARGET("target") + cls.EQUALITY + SUBSTATS("substat") + pp.StringEnd()
+        ).search_string(req_str):
             r = r[0].as_dict()
             return cls(Type(r["substat"]), Decimal("".join(r["target"])))
 
@@ -210,7 +203,7 @@ class Relative(Validity):
     ATK SPD below Squid
     """
 
-    RELATIVE = MatchFirst([CaselessLiteral(op) for op in ("above", "below")])
+    RELATIVE = pp.MatchFirst([pp.CaselessLiteral(op) for op in ("above", "below")])
 
     def __init__(self, substat: Type, direction: str, cookie: str):
         self.substat = substat
@@ -223,7 +216,11 @@ class Relative(Validity):
     @classmethod
     def parse(cls, req_str: str):
         if r := (
-            Start() + SUBSTATS("substat") + cls.RELATIVE("direction") + Word(printables + " ")("cookie") + End()
+            pp.StringStart()
+            + SUBSTATS("substat")
+            + cls.RELATIVE("direction")
+            + pp.Word(pp.printables + " ")("cookie")
+            + pp.StringEnd()
         ).search_string(req_str):
             r = r[0].as_dict()
             return cls(Type(r["substat"]), r["direction"], r["cookie"])

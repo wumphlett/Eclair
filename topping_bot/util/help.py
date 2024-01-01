@@ -44,13 +44,17 @@ ORDERING = {
     "Cookies": [
         "tutorial",
         "optimize",
+        "optimize view",
+        "optimize delete",
         "stop",
+        "snapshot",
     ],
     "Inventory": [
         "inv",
         "inv add",
         "inv delete",
         "inv deletetopping",
+        "inv help",
         "updateinv",
         "appendinv",
         "count",

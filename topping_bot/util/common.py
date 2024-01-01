@@ -102,15 +102,21 @@ async def send_msg(
     footer: Optional[str] = None,
     wrap: bool = True,
     thumbnail: Union[bool, Path] = True,
+    thread: discord.Thread = None,
 ):
     thumbnail_img = discord.File(thumbnail, filename=thumbnail.name) if isinstance(thumbnail, Path) else None
-    if type(ctx) == Context:
+    if thread:
+        return await thread.send(
+            embed=await new_embed(title, image, description, footer, wrap, thumbnail), file=thumbnail_img
+        )
+    elif type(ctx) == Context:
         return await ctx.reply(
             embed=await new_embed(title, image, description, footer, wrap, thumbnail), file=thumbnail_img
         )
-    await ctx.response.send_message(
-        embed=await new_embed(title, image, description, footer, wrap, thumbnail), file=thumbnail_img
-    )
+    else:
+        return await ctx.response.send_message(
+            embed=await new_embed(title, image, description, footer, wrap, thumbnail), file=thumbnail_img
+        )
 
 
 async def edit_msg(

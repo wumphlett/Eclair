@@ -211,12 +211,12 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
             wrap=False,
         )
 
-    @req.command(name="download", aliases=["d"], brief="Download", description="Download a requirements file")
+    @req.command(name="download", aliases=["d", "dl"], brief="Download", description="Download a requirements file")
     async def req_download(self, ctx):
         await self.common_download(ctx)
 
     @default.command(
-        name="download", aliases=["d"], brief="Download", description="Download a default requirements file"
+        name="download", aliases=["d", "dl"], brief="Download", description="Download a default requirements file"
     )
     async def def_download(self, ctx):
         await self.common_download(ctx, default_mode=True)
@@ -366,13 +366,14 @@ class RequirementFiles(Cog, description="View and edit your requirement files"):
         try:
             cookies = Requirements.from_yaml(tmp_fp)
         except Exception as exc:
+            msg = str(exc).replace(f' "tmp/{ctx.message.author.id}.yaml",', "")
             await send_msg(
                 ctx,
                 title="Err: Improper Requirement File",
                 description=[
                     "Requirements file cannot be parsed",
                     "",
-                    f"├ {exc}",
+                    f"{msg}",
                     "",
                     "Please use !req upload <file> once fixed",
                 ],

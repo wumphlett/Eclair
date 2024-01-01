@@ -1,13 +1,13 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 from zoneinfo import ZoneInfo
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from topping_bot.crk.cookies import Cookie, Position
-from topping_bot.crk.toppings import INFO, Resonance, Topping, ToppingSet, Type
+from topping_bot.optimize.toppings import INFO, Resonance, Topping, ToppingSet, Type
 from topping_bot.util.const import TMP_PATH, STATIC_PATH
 from topping_bot.util.utility import order_path
 
@@ -138,7 +138,7 @@ def image_midline(image):
     return round(np.sum(dx * np.arange(X)))
 
 
-def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
+def toppings_to_images(toppings: List[Tuple[int, Topping]], user_id, show_index=False):
     images = []
 
     for i, subset in enumerate(toppings[i : i + 25] for i in range(0, len(toppings), 25)):
@@ -154,6 +154,7 @@ def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
                 else:
                     topping = subset[y_mult * 5 + x_mult]
 
+                idx, topping = topping
                 x, y = 10 + x_mult * 216, 10 + y_mult * 216
 
                 image.paste(SLOT, (x, y), SLOT)
@@ -183,7 +184,7 @@ def toppings_to_images(toppings: List[Topping], user_id, show_index=False):
                 )
                 show_index and draw.text(
                     (x - 10, y + 160),
-                    str(i * 25 + y_mult * 5 + x_mult),
+                    str(idx),
                     font=STATIC["font"],
                     fill="rgb(255, 255, 0)",
                     stroke_fill="rgb(0, 0, 0)",

@@ -7,14 +7,16 @@ from multiprocessing.shared_memory import SharedMemory
 from pathlib import Path
 
 import discord
+from discord import SelectOption
 from discord.ext import commands
 from discord.ext.commands import Cog, parameter
 from tqdm import tqdm
 
 from topping_bot.optimize.optimize import Optimizer
-from topping_bot.optimize.reader import read_toppings
+from topping_bot.optimize.reader import read_toppings, write_toppings
 from topping_bot.optimize.requirements import Requirements
 from topping_bot.util.common import (
+    admin_only,
     approved_guild_ctx,
     approved_guild_only,
     edit_msg,
@@ -28,7 +30,7 @@ from topping_bot.util.const import CONFIG, DATA_PATH
 from topping_bot.util.cpu import optimize_cookie
 from topping_bot.util.image import topping_set_to_image
 from topping_bot.util.parallel import RUNNING_CPU_TASK, SEMAPHORE
-from topping_bot.ui.common import RemoveToppingsMenu, RequirementConfirm, RequirementView
+from topping_bot.ui.common import RemoveToppingsMenu, RequirementConfirm, RequirementView, SaveView, ThreadSave
 from topping_bot.util.utility import leaderboard_path
 
 
@@ -58,8 +60,11 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             wrap=False,
         )
 
-    @commands.command(
-        brief="Optimize", description="Optimize toppings given a requirements file", aliases=["optimise", "o"]
+    @commands.group(
+        aliases=["optimise", "o"],
+        brief="Optimize",
+        description="Optimize toppings given a requirements file",
+        invoke_without_command=True,
     )
     async def optimize(self, ctx, target=parameter(description="who to optimize for", default=None)):
         if target and not moderator_only(ctx):
@@ -168,13 +173,13 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             tqdm.write(f"{datetime.now().isoformat(sep=' ', timespec='seconds')} : {user} began !optimize")
 
             if msg is None:
-                await send_msg(
+                msg = await send_msg(
                     ctx,
                     title="Optimizing Cookie Toppings",
                     description=[f"```Solving {emoji} {name}:"]
                     + [f"├ {cookie.name}" for cookie in cookies]
-                    + ["", "Please wait ...```"]
-                    + ([f"<@{target.id}>"] if target else []),
+                    + ["```"]
+                    + [f"<@{user.id}>"],
                     wrap=False,
                 )
             else:
@@ -183,9 +188,15 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     title="Optimizing Cookie Toppings",
                     description=[f"```Solving {emoji} {name}:"]
                     + [f"├ {cookie.name}" for cookie in cookies]
-                    + ["", "Please wait ...```"]
-                    + ([f"<@{target.id}>"] if target else []),
+                    + ["```"]
+                    + [f"<@{user.id}>"],
                     wrap=False,
+                )
+
+            thread = None
+            if ctx.bot_permissions.create_public_threads and not isinstance(ctx.channel, discord.Thread):
+                thread = await msg.create_thread(
+                    name=f"{emoji} {name} for {user.display_name}", auto_archive_duration=60
                 )
 
             results = {}
@@ -201,11 +212,12 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                             "You have less than 5 toppings currently in inventory",
                             "Please use !inv add <attch video> to add more toppings",
                         ],
+                        thread=thread,
                     )
                     RUNNING_CPU_TASK.pop(user.id, None)
                     return
 
-                progress = await send_msg(ctx, title=f"Solving {cookie.name} ...")
+                progress = await send_msg(ctx, title=f"Solving {cookie.name} ...", thread=thread)
 
                 solution = Array("i", 5)
                 shared_memory = SharedMemory(create=True, size=64)
@@ -248,6 +260,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                             "If this is unexpected, please optimize your requirements or contact the admin",
                         ],
                         footer=f"admin: @{(await ctx.bot.application_info()).owner}",
+                        thread=thread,
                     )
                     RUNNING_CPU_TASK.pop(user.id, None)
                     return
@@ -260,6 +273,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                             "",
                             "Please use !inv add <attch video> to add more toppings",
                         ],
+                        thread=thread,
                     )
                     RUNNING_CPU_TASK.pop(user.id, None)
                     return
@@ -288,7 +302,10 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     thumbnail=False,
                 )
 
-                await ctx.reply(embed=embed, file=image)
+                if thread:
+                    await thread.send(embed=embed, file=image)
+                else:
+                    await ctx.reply(embed=embed, file=image)
 
                 if cancelled:
                     break
@@ -313,22 +330,105 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
 
         cookie_img.unlink(missing_ok=True)
 
-        embed_options = {
-            "title": "Remove Used Toppings?",
-            "description": "Would you like to remove the used toppings from your inventory?",
-        }
-        inner_embed_options = {
-            "title": "CONFIRM REMOVE USED TOPPINGS",
-            "description": "ARE YOU SURE YOU WANT TO REMOVE THE USED TOPPINGS FROM YOUR INVENTORY?",
-        }
+        save = None
+        if thread or isinstance(ctx.channel, discord.Thread):
+            save = ThreadSave(
+                jump_url=thread.jump_url if thread else ctx.channel.jump_url,
+                default_name=f"{emoji} {name}",
+                user_id=user.id,
+            )
 
-        await RemoveToppingsMenu(timeout=600).start(
+        remove_toppings = RemoveToppingsMenu(timeout=600)
+        await remove_toppings.start(ctx, solve=True, thread=thread, save=save)
+
+        timeout = await remove_toppings.wait()
+        if timeout or not remove_toppings.result:
+            return
+
+        write_toppings(optimizer.inventory, topping_fp)
+
+    @optimize.command(aliases=["v"], brief="View set", description="View a saved optimization result")
+    async def view(self, ctx):
+        fp = DATA_PATH / f"{ctx.author.id}-save.json"
+        if not fp.exists():
+            await send_msg(
+                ctx,
+                title="Err: Nothing Saved",
+                description=[
+                    "You do not have any optimization results saved",
+                    "",
+                    "Please Save Set after running '!optimize'",
+                ],
+            )
+            return
+
+        with open(fp) as f:
+            saves = json.load(f)
+
+        options = [
+            SelectOption(label=v.split(maxsplit=1)[1], value=k, emoji=v.split(maxsplit=1)[0]) for k, v in saves.items()
+        ]
+
+        save_view = SaveView()
+        await save_view.start(ctx, options, "What saved set do you want to view?")
+
+        timeout = await save_view.wait()
+        if timeout or not save_view.result:
+            return
+
+        await send_msg(
             ctx,
-            user,
-            toppings=optimizer.inventory,
-            fp=topping_fp,
-            embed_options=embed_options,
-            inner_embed_options=inner_embed_options,
+            title="Saved Set",
+            description=[
+                "```View your saved set with the following:```",
+                f"{save_view.result}",
+            ],
+            wrap=False,
+        )
+
+    @optimize.command(aliases=["del"], brief="Delete set", description="Delete saved optimization results")
+    async def delete(self, ctx):
+        fp = DATA_PATH / f"{ctx.author.id}-save.json"
+        if not fp.exists():
+            await send_msg(
+                ctx,
+                title="Err: Nothing Saved",
+                description=[
+                    "You do not have any optimization results saved",
+                    "",
+                    "Please Save Set after running '!optimize'",
+                ],
+            )
+            return
+
+        with open(fp) as f:
+            saves = json.load(f)
+
+        options = [
+            SelectOption(label=v.split(maxsplit=1)[1], value=k, emoji=v.split(maxsplit=1)[0]) for k, v in saves.items()
+        ]
+
+        save_view = SaveView()
+        await save_view.start(ctx, options, "What saved sets do you want to delete?", is_multi=True)
+
+        timeout = await save_view.wait()
+        if timeout or not save_view.result:
+            return
+
+        for link in save_view.result:
+            saves.pop(link, None)
+
+        with open(fp, "w") as f:
+            json.dump(saves, f, indent=4)
+
+        await send_msg(
+            ctx,
+            title="Deleted Saved Set(s)",
+            description=[
+                "Your saved sets have been deleted",
+                "",
+                "Feel free to save more with '!optimize'",
+            ],
         )
 
     @commands.command(brief="Stop", description="Stop a running cpu task")
@@ -348,3 +448,41 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
             for k, process in RUNNING_CPU_TASK.items():
                 process.terminate()
             RUNNING_CPU_TASK.clear()
+
+    @commands.command(checks=[admin_only], brief="Snapshot", description="Snapshot", aliases=["snap"])
+    async def snapshot(self, ctx, target=parameter(description="who to snapshot", default=None)):
+        if target and (target := await find_member(ctx, target)) is None:
+            return
+
+        options = await filter_requirements_files(ctx, override_user=target)
+        if len(options) == 0:
+            await send_msg(
+                ctx,
+                title="Err: No Requirements Files",
+                description=[
+                    "You have not uploaded a requirement file",
+                    "Please use !req upload <attch file> to specify a team to optimize",
+                    "Use !req help to learn more",
+                ],
+            )
+            return
+
+        reqs_view = RequirementView()
+        await reqs_view.start(ctx, options, "What optimization would you like to snapshot?")
+
+        timeout = await reqs_view.wait()
+        if timeout or not reqs_view.result:
+            return
+
+        requirements_fp = Path(reqs_view.result)
+        topping_fp = DATA_PATH / f"{target.id}.csv"
+
+        await ctx.channel.send(
+            embed=await new_embed(
+                title="Requested Snapshot", description="Attached is the current req file and user inventory"
+            ),
+            files=[
+                discord.File(requirements_fp, filename=requirements_fp.name),
+                discord.File(topping_fp, filename=topping_fp.name),
+            ],
+        )

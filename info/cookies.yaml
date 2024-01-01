@@ -37,6 +37,7 @@ order:
   - Caramel Arrow
   - Mozzarella
   - Sonic
+  - Frilled Jellyfish
   - Macaron
   - Clotted Cream
   - Royal Margarine
@@ -118,6 +119,8 @@ cookies:
     type: Ranged
     position: Middle
     cd: 13
+    resonant:
+      - Radiant Cheese
     aliases:
       - GC
   Dark Cacao:
@@ -137,6 +140,8 @@ cookies:
     position: Front
     cd: 17
     special_start: 1
+    resonant:
+      - Draconic
     aliases:
       - HB
       - Holly
@@ -154,6 +159,8 @@ cookies:
     type: Charge
     position: Front
     cd: 13
+    resonant:
+      - Draconic
     aliases:
       - Pit
       - PD
@@ -165,6 +172,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 15
+    resonant:
+      - Moonkissed
     aliases:
       - ML
   Black Pearl:
@@ -173,6 +182,8 @@ cookies:
     type: Ambush
     position: Middle
     cd: 15
+    resonant:
+      - Sea Salt
     aliases:
       - BP
   Frost Queen:
@@ -181,6 +192,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 15
+    resonant:
+      - Frosted Crystal
     aliases:
       - FQ
   Sea Fairy:
@@ -189,6 +202,8 @@ cookies:
     type: Bomber
     position: Middle
     cd: 17
+    resonant:
+      - Sea Salt
     aliases:
       - SF
   Crimson Coral:
@@ -198,6 +213,8 @@ cookies:
     position: Front
     cd: 12
     special_start: 2
+    resonant:
+      - Sea Salt
     aliases:
       - Coral
       - Crim
@@ -207,6 +224,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 12
+    resonant:
+      - Tropical Rock
     aliases:
       - SG
       - Glitter
@@ -217,6 +236,8 @@ cookies:
     position: Front
     cd: 15
     duration_skill: True
+    resonant:
+      - Trio
     aliases:
       - Cap
       - Capsa
@@ -227,6 +248,8 @@ cookies:
     type: Ambush
     position: Middle
     cd: 13
+    resonant:
+      - Moonkissed
     aliases:
       - SD
   Sherbet:
@@ -235,6 +258,8 @@ cookies:
     type: Ranged
     position: Middle
     cd: 13
+    resonant:
+      - Frosted Crystal
     aliases:
       - Sh
       - Sherb
@@ -283,6 +308,8 @@ cookies:
     type: Support
     position: Rear
     cd: 15
+    resonant:
+      - Radiant Cheese
     aliases: []
   Mozzarella:
     id: 589
@@ -290,6 +317,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 11
+    resonant:
+      - Radiant Cheese
     aliases:
       - Mozz
   Fettuccine:
@@ -299,6 +328,8 @@ cookies:
     position: Front
     cd: 12
     special_start: 1
+    resonant:
+      - Radiant Cheese
     aliases:
       - Fettu
       - Fett
@@ -308,6 +339,8 @@ cookies:
     type: Charge
     position: Front
     cd: 10
+    resonant:
+      - Radiant Cheese
     aliases:
       - Burnt
   Frilled Jellyfish:
@@ -317,6 +350,8 @@ cookies:
     position: Middle
     cd: 12
     special_start: 1
+    resonant:
+      - Sea Salt
     aliases:
       - FJ
   Peppermint:
@@ -325,6 +360,8 @@ cookies:
     type: Support
     position: Rear
     cd: 17
+    resonant:
+      - Sea Salt
     aliases:
       - Pep
       - PPM
@@ -335,6 +372,8 @@ cookies:
     type: Bomber
     position: Middle
     cd: 10
+    resonant:
+      - Tropical Rock
     aliases:
       - BL
   Rockstar:
@@ -343,6 +382,8 @@ cookies:
     type: Healing
     position: Middle
     cd: 15
+    resonant:
+      - Tropical Rock
     aliases:
       - RS
       - Rock
@@ -352,6 +393,8 @@ cookies:
     type: Ranged
     position: Rear
     cd: 12
+    resonant:
+      - Draconic
     aliases:
       - TT
       - Tarte
@@ -361,6 +404,8 @@ cookies:
     type: Ambush
     position: Middle
     cd: 12
+    resonant:
+      - Draconic
     aliases:
       - Marg
       - Margarine
@@ -372,6 +417,8 @@ cookies:
     position: Front
     cd: 12
     duration_skill: True
+    resonant:
+      - Trio
     aliases:
       - KA
       - Kouign
@@ -382,6 +429,8 @@ cookies:
     type: Bomber
     position: Middle
     cd: 15
+    resonant:
+      - Trio
     aliases:
       - Prune
       - PJ
@@ -391,6 +440,8 @@ cookies:
     type: Charge
     position: Front
     cd: 12
+    resonant:
+    - Moonkissed
     aliases:
       - Doughnut
       - Donut
@@ -400,6 +451,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 15
+    resonant:
+      - Moonkissed
     aliases:
       - BBP
   Milky Way:
@@ -408,6 +461,8 @@ cookies:
     type: Charge
     position: Front
     cd: 15
+    resonant:
+      - Moonkissed
     aliases:
       - MW
       - Milky
@@ -427,6 +482,8 @@ cookies:
     position: Front
     cd: 12
     duration_skill: True
+    resonant:
+      - Frosted Crystal
     aliases:
       - Pine
       - PC
@@ -510,6 +567,8 @@ cookies:
     position: Front
     cd: 10
     duration_skill: True
+    resonant:
+      - Draconic
     aliases:
       - WB
       - Wild
@@ -571,6 +630,8 @@ cookies:
     type: Support
     position: Rear
     cd: 17
+    resonant:
+      - Frosted Crystal
     aliases: []
   Pumpkin Pie:
     id: 528
@@ -623,6 +684,8 @@ cookies:
     type: Support
     position: Rear
     cd: 17
+    resonant:
+      - Tropical Rock
     aliases:
       - Parf
   Squid Ink:
@@ -641,6 +704,8 @@ cookies:
     type: Ambush
     position: Middle
     cd: 17
+    resonant:
+      - Sea Salt
     aliases:
       - Sorb
       - Sorbet
@@ -659,6 +724,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 15
+    resonant:
+      - Tropical Rock
     aliases: []
   Red Velvet:
     id: 521
@@ -699,6 +766,8 @@ cookies:
     type: Ambush
     position: Middle
     cd: 14
+    resonant:
+      - Radiant Cheese
     aliases:
       - BR
   Almond:
@@ -756,6 +825,8 @@ cookies:
     position: Front
     cd: 11
     duration_skill: True
+    resonant:
+      - Tropical Rock
     aliases:
       - WW
   Espresso:
@@ -851,6 +922,8 @@ cookies:
     type: Magic
     position: Middle
     cd: 20
+    resonant:
+      - Frosted Crystal
     aliases:
       - SS
   Dark Choco:
@@ -884,6 +957,8 @@ cookies:
     position: Front
     cd: 12
     duration_skill: True
+    resonant:
+      - Frosted Crystal
     aliases:
       - Yeti
   Snapdragon:
@@ -892,6 +967,8 @@ cookies:
     type: Support
     position: Rear
     cd: 17
+    resonant:
+      - Draconic
     aliases:
       - Snap
   BTS:
