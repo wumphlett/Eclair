@@ -183,8 +183,9 @@ def extract_unique_frames(fp: Path):
         frame = frame[:, : x // 2]
         partial_frame = frame[y // 2 : -(y // 4)]
 
-        if detect_blur(cv2.cvtColor(partial_frame, cv2.COLOR_BGR2GRAY), thresh=13):  # TODO Dial In Const
-            continue
+        # will have to be revisited, this bugs out
+        # if detect_blur(cv2.cvtColor(partial_frame, cv2.COLOR_BGR2GRAY), thresh=10):
+        #     continue
 
         # unique frame check
         if last_partial_frame is None:
@@ -209,9 +210,9 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
         if not is_video and (result := extract_multiupgrade_topping_data(frame)) is not None:
             yield result
             return
-
-        y, x, c = frame.shape
-        frame = frame[:, : x // 2]
+        elif not is_video:
+            y, x, c = frame.shape
+            frame = frame[:, : x // 2]
 
         if last_topping is None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
