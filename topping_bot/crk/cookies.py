@@ -5,6 +5,7 @@ from typing import Tuple
 
 import yaml
 
+from topping_bot.optimize.toppings import Resonance
 from topping_bot.util.const import INFO_PATH, STATIC_PATH
 
 
@@ -55,8 +56,6 @@ def cookie_data():
 
     aliases = {}
     cookies = data["cookies"]
-    featured = data.get("featured", [])
-    legendary = data.get("legendary", None)
 
     for cookie, data in list(cookies.items()):
         data["id"] = int(data["id"])
@@ -64,6 +63,7 @@ def cookie_data():
         data["rarity"] = Rarity(data["rarity"])
         data["type"] = Type(data["type"])
         data["position"] = Position(data["position"])
+        data["resonant"] = [Resonance(r) for r in data.get("resonant", [])]
 
         for alias in data["aliases"]:
             aliases[alias.lower()] = data
@@ -98,6 +98,7 @@ class Cookie:
         self.cooldown = kwargs["cd"]
         self.start_cd_override = kwargs.get("special_start")
         self.is_duration_skill = kwargs.get("duration_skill", False)
+        self.resonant = kwargs.get("resonant")
 
     def __str__(self):
         return self.name

@@ -4,7 +4,7 @@ from typing import Iterable, List
 
 from tqdm import tqdm
 
-from topping_bot.crk.toppings import Substats, Topping, ToppingSet, Type
+from topping_bot.optimize.toppings import Substats, Topping, ToppingSet, Type
 from topping_bot.optimize.cutter import Prune, Cutter
 from topping_bot.optimize.objectives import Special
 from topping_bot.optimize.requirements import Requirements
@@ -145,15 +145,15 @@ class Optimizer:
 
         if self.solution and len(combo) != 5:
             combined = self.combined_valid_case(combo, toppings, overall_set_requirements)
-            if combined is None or combined < 0:
+            if combined is None or combined < 0:  # partial informed combined valid check
                 failures |= Prune.COMBINED_VALID_FAILURE
 
             combined = self.combined_obj_case(combo, toppings, overall_set_requirements)
-            if combined is None or combined < 0:
+            if combined is None or combined < 0:  # partial informed combined obj check
                 failures |= Prune.COMBINED_OBJ_FAILURE
 
             combined = self.combined_all_case(combo, toppings, overall_set_requirements)
-            if combined is None or combined < 0:
+            if combined is None or combined < 0:  # partial informed combined all check
                 failures |= Prune.COMBINED_ALL_FAILURE
 
             if isinstance(self.reqs.objective, Special):
@@ -161,7 +161,7 @@ class Optimizer:
 
                 obj_value_met = False
                 for full_set in self.obj_special_case(combo, toppings, overall_set_requirements):
-                    combined = full_set.value(self.reqs.objective.types)
+                    combined = full_set.value(self.reqs.objective.types)  # partial informed special obj check
                     if combined > 0 and self.reqs.objective.special_upper(
                         combined, full_set, combo
                     ) > self.reqs.objective.value(self.solution):
@@ -173,7 +173,7 @@ class Optimizer:
 
                 all_value_met = False
                 for full_set in self.all_special_case(combo, toppings, overall_set_requirements):
-                    combined = full_set.value(self.reqs.all_substats) - sum(
+                    combined = full_set.value(self.reqs.all_substats) - sum(  # partial informed special all check
                         self.reqs.floor(s) for s in self.reqs.valid_substats
                     )
                     if combined > 0 and self.reqs.objective.special_upper(
@@ -185,7 +185,7 @@ class Optimizer:
                 if not all_value_met:
                     failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-        return failures, floor_failures, ceil_failures #, non_obj_count
+        return failures, floor_failures, ceil_failures
 
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))
@@ -302,8 +302,10 @@ class Optimizer:
             remaining_set = set(toppings).difference(set(combo))
 
             n = 5 - len(combo)
-            generators = [(topping for topping in remaining_set if topping.flavor == substat) for substat in self.reqs.objective.types]
-            pools = [self.floor_pool(n, gen, substats) for gen in generators]
+            pools = [
+                self.floor_pool(n, (topping for topping in remaining_set if topping.flavor == s), substats)
+                for s in self.reqs.objective.types
+            ]
 
             for partitions in self.sum_to_n(n, len(pools)):
                 potential_set = combo.copy()

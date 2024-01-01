@@ -6,7 +6,8 @@ from typing import Any, List, Tuple
 import yaml
 from yaml import BaseLoader
 
-from topping_bot.crk.toppings import INFO, Resonance, Substats, Topping, ToppingSet, Type
+from topping_bot.crk.cookies import Cookie
+from topping_bot.optimize.toppings import INFO, Resonance, Topping, Type
 from topping_bot.optimize.objectives import Special, Combo, EDMG, Vitality, Objective
 from topping_bot.optimize.validity import Normal, Range, Equality, Relative
 from topping_bot.util.const import TMP_PATH
@@ -46,6 +47,9 @@ def sanitize(requirements_fp, user_id=0, rem_leaderboard=False):
                     if substat != "max":
                         converted_req[substat] = value
                 cookie["requirements"][i] = converted_req
+
+        if cookie.get("name") and Cookie.get(cookie["name"]):
+            cookie.pop("resonant", None)
 
     filtered_mods = {}
     for substat, mods in requirements.get("modifiers", {}).items():
@@ -131,7 +135,13 @@ class Requirements:
                         raise Exception(f"{cookie['name']} : Combo objective must specify substats")
 
             cookie_names.add(cookie["name"])
-            resonances = [Resonance(resonance) for resonance in cookie.get("resonant", [])] + [Resonance.NORMAL]
+            if cookie.get("resonant"):
+                resonances = [Resonance(r) for r in cookie.get("resonant")]
+            elif Cookie.get(cookie["name"]):
+                resonances = Cookie.get(cookie["name"]).resonant
+            else:
+                resonances = []
+            resonances = resonances + [Resonance.NORMAL]
             weight = (
                 int(requirements["leaderboard"][cookie["name"]])
                 if requirements.get("leaderboard", {}).get(cookie["name"])

@@ -1,4 +1,5 @@
 import csv
+import traceback
 from enum import Enum
 from pathlib import Path
 from typing import Iterable, List
@@ -6,7 +7,7 @@ from typing import Iterable, List
 import cv2
 import numpy as np
 
-from topping_bot.crk.toppings import INFO, Resonance, Topping
+from topping_bot.optimize.toppings import INFO, Resonance, Topping
 from topping_bot.util.const import DEBUG_PATH, STATIC_PATH
 
 RESONANCE_THRESHOLD = 0.3
@@ -17,48 +18,44 @@ TEMPLATES = {
     "substat": {fp: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "substat").iterdir()},
     "digits": {fp: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "digits").iterdir()},
     "resonant": {fp.stem: cv2.imread(str(fp), cv2.IMREAD_GRAYSCALE) for fp in (READER_PATH / "resonant").iterdir()},
-    "resonant_indicator": cv2.imread(str(READER_PATH / "resonant" / "resonant_indicator_bw.png"), cv2.IMREAD_GRAYSCALE)
+    "resonant_indicator": cv2.imread(str(READER_PATH / "resonant" / "resonant_indicator_bw.png"), cv2.IMREAD_GRAYSCALE),
 }
-
-class STATE(Enum):
-    WAITING = "Waiting"
-    STARTED = "Started"
-    ENDED = "Ended"
 
 
 def nothing(x):
     pass
 
+
 def roi_selector(input_frame):
     # Create a window and trackbars to adjust the region of interest
-    cv2.namedWindow('ROI Selector', cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow('ROI Selector', 800, 600)
-    cv2.createTrackbar('Offset X', 'ROI Selector', 0, input_frame.shape[1], nothing)
-    cv2.createTrackbar('Offset Y', 'ROI Selector', 0, input_frame.shape[0], nothing)
-    cv2.createTrackbar('Width', 'ROI Selector', 100, input_frame.shape[1], nothing)
-    cv2.createTrackbar('Height', 'ROI Selector', 100, input_frame.shape[0], nothing)
+    cv2.namedWindow("ROI Selector", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("ROI Selector", 800, 600)
+    cv2.createTrackbar("Offset X", "ROI Selector", 0, input_frame.shape[1], nothing)
+    cv2.createTrackbar("Offset Y", "ROI Selector", 0, input_frame.shape[0], nothing)
+    cv2.createTrackbar("Width", "ROI Selector", 100, input_frame.shape[1], nothing)
+    cv2.createTrackbar("Height", "ROI Selector", 100, input_frame.shape[0], nothing)
 
     while True:
         # Get current positions of trackbars
-        offset_x = cv2.getTrackbarPos('Offset X', 'ROI Selector')
-        offset_y = cv2.getTrackbarPos('Offset Y', 'ROI Selector')
-        width = cv2.getTrackbarPos('Width', 'ROI Selector')
-        height = cv2.getTrackbarPos('Height', 'ROI Selector')
+        offset_x = cv2.getTrackbarPos("Offset X", "ROI Selector")
+        offset_y = cv2.getTrackbarPos("Offset Y", "ROI Selector")
+        width = cv2.getTrackbarPos("Width", "ROI Selector")
+        height = cv2.getTrackbarPos("Height", "ROI Selector")
 
         # Draw the ROI on the frame
         display_frame = input_frame.copy()
         cv2.rectangle(display_frame, (offset_x, offset_y), (offset_x + width, offset_y + height), (0, 255, 0), 2)
-        cv2.imshow('ROI Selector', display_frame)
+        cv2.imshow("ROI Selector", display_frame)
 
         # Wait for the 'q' key to quit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     cv2.destroyAllWindows()
     return offset_x, offset_y, width, height
 
 
-def read_toppings(fp: Path):
+def read_toppings(fp: Path) -> List[Topping]:
     toppings = []
     with open(fp) as f:
         reader = csv.reader(f)
@@ -67,9 +64,9 @@ def read_toppings(fp: Path):
     return toppings
 
 
-def write_toppings(toppings: List[Topping], fp: Path, append=False):
+def write_toppings(toppings: Iterable[Topping], fp: Path, append=False):
     mode = "w" if not append else "a"
-    with open(fp, mode, newline="") as f:
+    with open(fp, mode=mode, newline="") as f:
         writer = csv.writer(f)
         for topping in toppings:
             writer.writerow(
@@ -150,6 +147,22 @@ def diff(source: np.ndarray, template: np.ndarray):
     return cv2.norm(source, template)
 
 
+def detect_blur(image, size=60, thresh=10):
+    (h, w) = image.shape
+    (cX, cY) = (int(w / 2.0), int(h / 2.0))
+
+    fft = np.fft.fft2(image)
+    fft_shift = np.fft.fftshift(fft)
+    fft_shift[cY - size : cY + size, cX - size : cX + size] = 0
+    fft_shift = np.fft.ifftshift(fft_shift)
+    recon = np.fft.ifft2(fft_shift)
+
+    magnitude = 20 * np.log(np.abs(recon))
+    mean = np.mean(magnitude)
+
+    return mean <= thresh
+
+
 def extract_unique_frames(fp: Path):
     video = cv2.VideoCapture(str(fp))
     for _ in range(2):
@@ -158,29 +171,30 @@ def extract_unique_frames(fp: Path):
 
     video = cv2.VideoCapture(str(fp))
 
-    count = -1
     last_partial_frame = None
     success, frame = video.read()
     y, x, c = frame.shape
     while success:
-        if is_video and count < 6:
-            success, frame = video.read()
-            count += 1
-            continue
+        if not is_video:
+            yield frame, is_video
+            return
 
         # crop left half
         frame = frame[:, : x // 2]
         partial_frame = frame[y // 2 : -(y // 4)]
+
+        if detect_blur(cv2.cvtColor(partial_frame, cv2.COLOR_BGR2GRAY), thresh=13):  # TODO Dial In Const
+            continue
 
         # unique frame check
         if last_partial_frame is None:
             new_y, new_x, new_c = partial_frame.shape
             threshold = new_y * new_x // 200
             last_partial_frame = partial_frame
-            yield frame
+            yield frame, is_video
         elif cv2.norm(last_partial_frame, partial_frame, cv2.NORM_L2) > threshold:
             last_partial_frame = partial_frame
-            yield frame
+            yield frame, is_video
         success, frame = video.read()
 
     video.release()
@@ -189,10 +203,16 @@ def extract_unique_frames(fp: Path):
 def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbose=False):
     cv2.destroyAllWindows()
 
-    state = STATE.WAITING
     last_topping = None
     bounding_rectangle = None
-    for i, frame in enumerate(unique_frames):
+    for i, (frame, is_video) in enumerate(unique_frames):
+        if not is_video and (result := extract_multiupgrade_topping_data(frame)) is not None:
+            yield result
+            return
+
+        y, x, c = frame.shape
+        frame = frame[:, : x // 2]
+
         if last_topping is None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             threshold = cv2.threshold(gray, 215, 255, cv2.THRESH_BINARY)[1]
@@ -242,10 +262,9 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
         # Resonance check
         if substats:
             resonant_indicator_roi = frame[235:315, 1070:1160]
-            # TODO explore using cv2.TM_CCOEFF_NORMED for all template matching and dial in constants
             match = cv2.matchTemplate(resonant_indicator_roi, TEMPLATES["resonant_indicator"], cv2.TM_CCOEFF_NORMED)
             _, max_val, _, _ = cv2.minMaxLoc(match)
-            
+
             if max_val < RESONANCE_THRESHOLD:
                 metatype = Resonance.NORMAL
             else:
@@ -256,12 +275,11 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                 if active_pixels.size == 0:
                     return None
 
-                top_left = np.min(active_pixels, axis=1).astype(np.int32)
-
                 # to capture new resonance template
                 # cv2.imwrite(str(READER_PATH / "resonant" / "new.jpg"), title)
 
                 metatype = None
+                metatype_error = float("inf")
                 for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
                     template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
                     h, w = template.shape
@@ -270,50 +288,96 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
                     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                     x, y = min_loc
-                    if abs(top_left[0] - y) > 10 or abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO:
-                        continue
 
-                    if cv2.norm(title[y : y + h, x : x + w], template) < h * w * 0.6:
+                    if (error := cv2.norm(title[y : y + h, x : x + w], template, cv2.NORM_L1) * h * w) < metatype_error:
                         metatype = resonance
-                        break
-
-                if metatype is None:
-                    if verbose:
-                        cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
-                        with open(DEBUG_PATH / f"{i}.txt", "w") as f:
-                            f.write("Metatype Detection Failure\n")
-                            f.write(f"{substats}\n")
-                    elif debug:
-                        ...
-                    else:
-                        raise ValueError
+                        metatype_error = error
 
             topping = Topping(substats, resonance=metatype)
             if not topping.validate():
-                if state == STATE.STARTED:
-                    if verbose:
-                        cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
-                        with open(DEBUG_PATH / f"{i}.txt", "w") as f:
-                            f.write("Validation Failure\n")
-                            f.write(f"{substats}\n")
-                    if not debug:
-                        state = STATE.ENDED
-                elif state == STATE.WAITING or STATE.ENDED:
-                    continue
+                continue
             elif last_topping is None or topping != last_topping:
-                if state == STATE.ENDED:
-                    if verbose:
-                        cv2.imwrite(str(DEBUG_PATH / f"{i}.png"), frame)
-                        with open(DEBUG_PATH / f"{i}.txt", "w") as f:
-                            f.write("State Change Failure\n")
-                            f.write(f"{substats}\n")
-                    elif debug:
-                        ...
-                    else:
-                        raise ValueError
-                else:
-                    state = STATE.STARTED
-                    last_topping = topping
-                    yield topping
-        elif last_topping:
-            return
+                last_topping = topping
+                yield topping
+
+
+def extract_multiupgrade_topping_data(frame: np.ndarray):
+    y, x, c = frame.shape
+    frame = frame[:, x // 2 :]
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    threshold = cv2.threshold(gray, 215, 255, cv2.THRESH_BINARY)[1]
+
+    contours, hierarchies = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return
+    contour = max(contours, key=lambda x: cv2.contourArea(x))
+
+    if cv2.contourArea(contour) <= 10_000:
+        return
+    bounding_rectangle = cv2.boundingRect(contour)
+
+    x, y, w, h = bounding_rectangle
+    frame = frame[y: y + h, x: x + w]
+
+    y, x, c = frame.shape
+    scale_factor = 1400 / y
+    frame = cv2.resize(frame, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+
+    y, x, c = frame.shape
+    if x < 1780:
+        return
+
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    threshold, info_frame = cv2.threshold(frame, 180, 255, cv2.THRESH_BINARY)
+
+    topping_info = info_frame[833:1340, 50:-50]
+    main = topping_info[13:120]
+    scale_factor = 65 / 53
+    main = cv2.resize(main, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+
+    flavor, value = image_to_substat(main[:, :1430], "flavor"), image_to_decimal(main[:, 1430:])
+    if flavor is None or value is None or value == "0":
+        return
+    substats = [(flavor, value)]
+    substats_info = topping_info[176:]
+
+    for j in range(3):
+        line = substats_info[114 * j: 114 * j + 80]
+        substat, value = image_to_substat(line[:, 100:1345], "substat"), image_to_decimal(line[:, 1345:])
+
+        if substat is None or value is None:
+            continue
+
+        substats.append((substat, value))
+
+    threshold, info_frame = cv2.threshold(frame, 150, 255, cv2.THRESH_BINARY)
+    res_info = info_frame[608:708, 200:-200]
+    scale_factor = 73 / 63
+    res_info = cv2.resize(res_info, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+
+    active_pixels = np.stack(np.where(res_info == 0))
+    if active_pixels.size == 0:
+        return
+    top_left = np.min(active_pixels, axis=1).astype(np.int32)
+
+    metatype = Resonance.NORMAL
+    for resonance in [resonance for resonance in Resonance if resonance != Resonance.NORMAL]:
+        template = TEMPLATES["resonant"][resonance.value.lower().replace(" ", "_")]
+        h, w = template.shape
+
+        result = cv2.matchTemplate(res_info, template, cv2.TM_SQDIFF)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+        x, y = min_loc
+        if abs(top_left[0] - y) > 10 or (abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO):
+            continue
+
+        if cv2.norm(res_info[y: y + h, x: x + w], template, cv2.NORM_L1) / (h * w) < 25:  # TODO Dial In Const
+            metatype = resonance
+            break
+
+    topping = Topping(substats, resonance=metatype)
+    if not topping.validate():
+        return
+    return topping
