@@ -1,3 +1,4 @@
+import traceback
 from multiprocessing.shared_memory import SharedMemory
 
 from tqdm import tqdm
