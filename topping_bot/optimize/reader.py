@@ -289,7 +289,9 @@ def extract_topping_data(unique_frames: Iterable[np.ndarray], debug=False, verbo
 
                     x, y = min_loc
 
-                    if (error := cv2.norm(title[y : y + h, x : x + w], template, cv2.NORM_L1) / (h * w)) < metatype_error:
+                    if (
+                        error := cv2.norm(title[y : y + h, x : x + w], template, cv2.NORM_L1) / (h * w)
+                    ) < metatype_error:
                         metatype = resonance
                         metatype_error = error
 
@@ -318,7 +320,7 @@ def extract_multiupgrade_topping_data(frame: np.ndarray):
     bounding_rectangle = cv2.boundingRect(contour)
 
     x, y, w, h = bounding_rectangle
-    frame = frame[y: y + h, x: x + w]
+    frame = frame[y : y + h, x : x + w]
 
     y, x, c = frame.shape
     scale_factor = 1400 / y
@@ -343,7 +345,7 @@ def extract_multiupgrade_topping_data(frame: np.ndarray):
     substats_info = topping_info[176:]
 
     for j in range(3):
-        line = substats_info[114 * j: 114 * j + 80]
+        line = substats_info[114 * j : 114 * j + 80]
         substat, value = image_to_substat(line[:, 100:1345], "substat"), image_to_decimal(line[:, 1345:])
 
         if substat is None or value is None:
@@ -373,7 +375,7 @@ def extract_multiupgrade_topping_data(frame: np.ndarray):
         if abs(top_left[0] - y) > 10 or (abs(top_left[1] - x) > 15 and resonance != Resonance.TRIO):
             continue
 
-        if cv2.norm(res_info[y: y + h, x: x + w], template, cv2.NORM_L1) / (h * w) < 25:  # TODO Dial In Const
+        if cv2.norm(res_info[y : y + h, x : x + w], template, cv2.NORM_L1) / (h * w) < 25:  # TODO Dial In Const
             metatype = resonance
             break
 

@@ -190,6 +190,16 @@ class Requirements:
 
         self.valid = list(collapsed.values())
 
+        matched = defaultdict(dict)
+        for valid in self.valid:
+            matched[valid.substat][valid.op.str] = valid.target
+
+        for s, bounds in matched.items():
+            if bounds.get("<=", float("inf")) < bounds.get(">=", 0):
+                raise ValueError(
+                    f"{self.name} contains impossible requirements {bounds['>=']} <= {s.value} <= {bounds['<=']}"
+                )
+
         if isinstance(self.objective, Special):
             bounds = self.objective.bounds
             for req in self.floor_reqs():

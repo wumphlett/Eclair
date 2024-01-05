@@ -43,6 +43,10 @@ class Type(Enum):
     SORBET_SHARK = "Sorbet Shark"
     BLACK_RAISIN = "Black Raisin"
     SNOW_SUGAR = "Snow Sugar"
+    PINECONE = "Pinecone"
+    FINANCIER = "Financier"
+    CREAM_UNICORN = "Cream Unicorn"
+    CAPTAIN_CAVIAR = "Captain Caviar"
 
 
 CANDIES = set(candy.value for candy in Type)
@@ -220,6 +224,33 @@ class Candy:
                 ("ATK (Others)", f"{Decimal('45.5'):.1f}%"),
                 ("Additional DMG to Frozen", f"{Decimal('242.8'):.1f}%"),
                 ("Snow King DMG Focus", f"{Decimal(50):.1f}%"),
+            ]
+        elif self.candy == Type.PINECONE:
+            return [
+                ("DMG Resist on Tree Golem", f"{linear(15, 40, 30)(self.lvl):.1f}%"),
+                ("DEF on Tree Golem", f"{Decimal(20):.1f}%"),
+                ("ATK SPD Debuff Resist on Tree Golem", f"{Decimal(35):.1f}%"),
+                ("HP Shield on Tree Golem", f"{Decimal(30):.1f}%"),
+            ]
+        elif self.candy == Type.FINANCIER:
+            return [
+                ("DMG Resist", f"{Decimal(30):.1f}%"),
+                ("CRIT Resist", f"{Decimal(35):.1f}%"),
+                ("Debuff Immunity", f"{Decimal(15):.1f}s"),
+                ("Team Healing by DEF", f"{linear(11, '28.5', 30)(self.lvl):.1f}%"),
+                ("Team DMG Resist", f"{Decimal(15):.1f}%"),
+            ]
+        elif self.candy == Type.CREAM_UNICORN:
+            return [
+                ("Blue Flame DMG", f"{linear('289.6', '464.3', 30)(self.lvl):.1f}%"),
+                ("Burn DMG", f"{Decimal('47.4'):.1f}%"),
+                ("Blue Flame Healing", f"{Decimal(40):.1f}s"),
+            ]
+        elif self.candy == Type.CAPTAIN_CAVIAR:
+            return [
+                ("First Explosion DMG", f"{linear('195.7', '254.3', 30)(self.lvl):.1f}%"),
+                ("DMG Resist Bypass", f"{Decimal(25):.1f}%"),
+                ("Reflected DMG", f"{-Decimal(65):.1f}s"),
             ]
 
     @property
@@ -407,3 +438,33 @@ class Candy:
                 return [("Snow King HP Shield", "90.0%")]
             elif self.lvl >= 10:
                 return [("Snow King HP Shield", "80.0%")]
+        elif self.candy == Type.PINECONE:
+            if self.lvl >= 30:
+                return [("Tree Golem ATK SPD", "50.0%")]
+            elif self.lvl >= 20:
+                return [("Tree Golem ATK SPD", "45.0%")]
+            elif self.lvl >= 10:
+                return [("Tree Golem ATK SPD", "40.0%")]
+        elif self.candy == Type.FINANCIER:
+            if self.lvl >= 30:
+                return [("Light Type DMG in Skill Area", "30.0%")]
+            elif self.lvl >= 20:
+                return [("Light Type DMG in Skill Area", "25.0%")]
+            elif self.lvl >= 10:
+                return [("Light Type DMG in Skill Area", "20.0%")]
+        elif self.candy == Type.CREAM_UNICORN:
+            if self.lvl >= 30:
+                return [("Team Fire Type DMG", "25.0%")]
+            elif self.lvl >= 20:
+                return [("Team Fire Type DMG", "20.0%")]
+            elif self.lvl >= 10:
+                return [("Team Fire Type DMG", "15.0%")]
+        elif self.candy == Type.CAPTAIN_CAVIAR:
+            base = []
+            if self.lvl >= 10:
+                base.append(("Second Explosion DMG", "254.3%"))
+            if self.lvl >= 20:
+                base.append(("Third Explosion DMG", "254.3%"))
+            if self.lvl >= 30:
+                base.append(("Fourth Explosion DMG", "254.3%"))
+            return base

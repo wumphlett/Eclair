@@ -87,8 +87,8 @@ async def new_embed(
     embed = Embed(title=title, description=description, colour=color).set_image(url=image)
     if isinstance(thumbnail, Path):
         embed.set_thumbnail(url=f"attachment://{thumbnail.name}")
-    elif thumbnail:
-        embed.set_thumbnail(url=CONFIG["static"]["thumbnail"])
+    # elif thumbnail:
+    #     embed.set_thumbnail(url=CONFIG["static"]["thumbnail"])
     if footer:
         embed.set_footer(text=footer, icon_url=CONFIG["static"]["icon"])
     return embed
