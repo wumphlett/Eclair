@@ -30,6 +30,10 @@ class Optimizer:
     def set_solution(self, indices: List[int]):
         self.solution = ToppingSet([self.inventory[i] for i in indices])
 
+    def precheck(self, reqs: Requirements):
+        self.reqs = reqs
+        self.reqs.realize(self.cookies)
+
     def solve(self, reqs: Requirements):
         """Solves a cookies needed toppings given a set of requirements"""
         self.reqs = reqs
@@ -120,6 +124,8 @@ class Optimizer:
                 failures |= Prune.FLOOR_FAILURE
                 floor_failures.append(substat)
 
+        non_objective_count = sum(overall_set_requirements.values())
+
         ceil_failures = []
         for r in self.reqs.ceiling_reqs():  # valid ceiling check
             substat, compare, required = r.substat, r.op.compare, r.target
@@ -185,7 +191,7 @@ class Optimizer:
                 if not all_value_met:
                     failures |= Prune.COMBINED_SPECIAL_ALL_FAILURE
 
-        return failures, floor_failures, ceil_failures
+        return failures, floor_failures, ceil_failures, non_objective_count
 
     def floor_pool(self, n: int, pool: Iterable[Topping], substats):
         return nlargest(n, pool, key=lambda x: x.value(substats))

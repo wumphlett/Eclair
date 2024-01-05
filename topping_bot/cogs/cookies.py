@@ -217,6 +217,21 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
                     RUNNING_CPU_TASK.pop(user.id, None)
                     return
 
+                try:
+                    optimizer.precheck(cookie)
+                except ValueError as exc:
+                    await send_msg(
+                        ctx,
+                        title="Err: Impossible Reqs",
+                        description=[
+                            f"{exc}",
+                        ],
+                        thumbnail=False,
+                        thread=thread,
+                    )
+                    RUNNING_CPU_TASK.pop(user.id, None)
+                    return
+
                 progress = await send_msg(ctx, title=f"Solving {cookie.name} ...", thread=thread)
 
                 solution = Array("i", 5)
@@ -365,9 +380,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
         with open(fp) as f:
             saves = json.load(f)
 
-        options = [
-            SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()
-        ]
+        options = [SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()]
 
         save_view = SaveView()
         await save_view.start(ctx, options, "What saved set do you want to view?")
@@ -404,9 +417,7 @@ class Cookies(Cog, description="Optimize your cookies' toppings"):
         with open(fp) as f:
             saves = json.load(f)
 
-        options = [
-            SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()
-        ]
+        options = [SelectOption(label=v, value=k, emoji="💾") for k, v in saves.items()]
 
         save_view = SaveView()
         await save_view.start(ctx, options, "What saved sets do you want to delete?", is_multi=True)

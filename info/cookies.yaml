@@ -23,6 +23,7 @@ order:
   - Pitaya Dragon
   - Avocado
   - Milky Way
+  - Rebel
   - Strawberry Crepe
   - Purple Yam
   - Financier
@@ -284,6 +285,13 @@ cookies:
       - CC
       - Clotted
       - Clot
+  Rebel:
+    id: 0
+    rarity: Epic
+    type: Ambush
+    position: Front
+    cd: 13
+    aliases: []
   Crème Brûlée:
     id: 593
     rarity: Epic
