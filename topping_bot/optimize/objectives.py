@@ -148,7 +148,10 @@ class EDMG(Special):
 
     def fancy_value(self, topping_set: ToppingSet):
         crit = min(Decimal(1), topping_set.value(Type.CRIT) / Decimal(100) + self.base_crit)
-        rng = Decimal(-float(crit) * math.log2(crit) - float(1 - crit) * math.log2(1 - crit)).quantize(Decimal(".001"))
+        if crit == Decimal(1): 
+            rng = Decimal(0).quantize(Decimal(".001"))
+        else:
+            rng = Decimal(-float(crit) * math.log2(crit) - float(1 - crit) * math.log2(1 - crit)).quantize(Decimal(".001"))
         return {Type.E_DMG: self.value(topping_set) * 100, Type.RNG: rng * 100}
 
 
