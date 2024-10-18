@@ -75,15 +75,6 @@ hollyberry:
     icon: 13
     rank: 12
     optimizer: True
-  - name: ChromaticHaze
-    server: 1106150108015366205
-    role: 1106158072658923550
-    channels:
-      - 1118578792135413780
-    emoji: 🌈
-    icon: 20
-    rank: 13
-    optimizer: True
   - name: BadBatchOCookies
     server: 910556057305235466
     role: 974790857930706995
